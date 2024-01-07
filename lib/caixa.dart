@@ -1806,6 +1806,8 @@ class _CaixaPageState extends State<CaixaPage> {
     log('cupom2::$j');
     log('cupom2::$j');
     log('cupom2::$j');
+
+    // baiao
   }
 
   ///
