@@ -1810,6 +1810,10 @@ class _CaixaPageState extends State<CaixaPage> {
     // baiao
 
     log('cupom10::$j');
+    log('cupom10::$j');
+    log('cupom10::$j');
+    log('cupom10::$j');
+    log('cupom10::$j');
   }
 
   ///
