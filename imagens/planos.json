@@ -1,0 +1,8 @@
+{
+	"data" :
+	[
+	  {"id":"0", "nome":"Prata", "descricao":"O plano prata é perfeito para o empreendedor individual que pretende controlar todas as suas informações de vendas realizadas com controle de estoque", "dicas":"1 Loja / 1 Operador", "valor":"80.00"},
+	  {"id":"1", "nome":"Bronze", "descricao":"O plano bronze contempla as funcionalidades do plano prata, com recursos de notas fiscais eletrônicas mais controle de funcionários e comissões", "dicas":"1 Loja / 1 Gerente / 1 Operador / 3 Vendedores", "valor":"120.00"},
+	  {"id":"2", "nome":"Ouro", "descricao":"O plano ouro contempla todas as funcionalidades habilitadas para a gestão completa do seu negócio", "dicas":"1 Loja / 1 Gerente / 6 Vendedores / 1 Estoquista", "valor":"150.00"}
+	]
+}
