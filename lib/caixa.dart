@@ -1803,6 +1803,7 @@ class _CaixaPageState extends State<CaixaPage> {
     var j = json.encode(jVenda);
 
     log('cupom::$j');
+    log('cupom2::$j');
   }
 
   ///
