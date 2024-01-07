@@ -1803,21 +1803,6 @@ class _CaixaPageState extends State<CaixaPage> {
     var j = json.encode(jVenda);
 
     log('cupom::$j');
-    log('cupom2::$j');
-    log('cupom2::$j');
-    log('cupom2::$j');
-
-    // baiao
-
-    log('cupom10::$j');
-    log('cupom10::$j');
-    log('cupom10::$j');
-    log('cupom10::$j');
-
-    log('cupom11::$j');
-
-    log('BAIAO::$j');
-    log('BAIAO2::$j');
   }
 
   ///
