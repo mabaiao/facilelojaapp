@@ -6,7 +6,6 @@ import 'dart:developer';
 
 import 'package:facilelojaapp/produtos.dart';
 import 'package:facilelojaapp/produtospesquisa.dart';
-import 'package:facilelojaapp/util/device.dart';
 import 'package:facilelojaapp/utilpost.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +19,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:avatar_glow/avatar_glow.dart';
 import 'autoriza.dart';
 import 'cupom.dart';
+import 'dados/cadastrounico.dart';
 import 'dados/funcionario.dart';
 import 'dados/produto.dart';
 import 'dados/produtovariacao.dart';
@@ -55,6 +55,9 @@ class _CaixaPageState extends State<CaixaPage> {
   var vendaPorAtacado = 'N';
 
   late List<Funcionario> listVendedores = List.empty();
+
+  late CadastroUnico registroCliente;
+  late LeClienteModo modoCliente;
 
   @override
   void initState() {
@@ -216,15 +219,15 @@ class _CaixaPageState extends State<CaixaPage> {
       ));
     }
 
-    if (gUsuario.siglaCargo == 'ope') {
-      listIconButton.add(FormIconButton(
-        icon: Icons.add_reaction_outlined,
-        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Atendimento', 'F9'),
-        onTap: () {
-          menuInformarCliente(context);
-        },
-      ));
+    listIconButton.add(FormIconButton(
+      icon: Icons.add_reaction_outlined,
+      caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Cliente', 'F9'),
+      onTap: () {
+        menuInformarCliente(context);
+      },
+    ));
 
+    if (gUsuario.siglaCargo == 'ope') {
       _cupom.idFuncionarioComissionado = gUsuario.idFuncionario;
       _cupom.primeiroNomeComissionado = gUsuario.nome;
     }
@@ -244,8 +247,8 @@ class _CaixaPageState extends State<CaixaPage> {
                 ? 0.95
                 : gDevice.isTabletLandscape
                     ? 0.95
-                    : gDevice.isPhoneSmall
-                        ? 0.90
+                    : gDevice.isPhoneAll
+                        ? 0.95
                         : 1),
         child: Stack(
           children: [
@@ -270,11 +273,16 @@ class _CaixaPageState extends State<CaixaPage> {
                             children: [
                               InkWell(
                                 onTap: () {
+                                  if (_cupom.idCliente == '0' || registroCliente.nome.isEmpty || registroCliente.nome == 'Sem nome') {
+                                    facileSnackBarError(context, 'Ops!', 'Informar cliente para prosseguir!');
+                                    return;
+                                  }
+
                                   emitir(context);
                                 },
                                 child: AvatarGlow(
                                   glowColor: Colors.green.shade900,
-                                  endRadius: 110.0,
+                                  endRadius: 120,
                                   duration: const Duration(milliseconds: 1000),
                                   repeat: true,
                                   showTwoGlows: true,
@@ -284,19 +292,24 @@ class _CaixaPageState extends State<CaixaPage> {
                                     shape: const CircleBorder(),
                                     child: CircleAvatar(
                                       backgroundColor: Colors.green.shade900,
-                                      radius: 50.0,
+                                      radius: gDevice.isTabletAll ? 80 : 50,
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Icon(
                                             (gUsuario.siglaCargo == 'ope' ? Icons.send : Icons.point_of_sale_outlined),
-                                            size: 40,
+                                            size: gDevice.isTabletAll ? 80 : 40,
                                             color: Colors.white,
                                           ),
-                                          Text(
+                                          FacileTheme.headlineMedium(
+                                            context,
                                             (gUsuario.siglaCargo == 'ope' ? 'ENVIAR' : 'PAGAR'),
-                                            style: const TextStyle(color: Colors.white),
+                                            invert: true,
                                           ),
+                                          // Text(
+                                          //   (gUsuario.siglaCargo == 'ope' ? 'ENVIAR' : 'PAGAR'),
+                                          //   style: const TextStyle(color: Colors.white),
+                                          // ),
                                         ],
                                       ),
                                     ),
@@ -331,7 +344,7 @@ class _CaixaPageState extends State<CaixaPage> {
                 ? null
                 : getCupertinoAppBarCheck(
                     context,
-                    '(${_cupom.qtdProdutos.toStringAsFixed(0)})',
+                    '${gDevice.isTabletAll ? 'Itens ' : ''}(${_cupom.qtdProdutos.toStringAsFixed(0)})',
                     listIconButton,
                     false,
                     addCheck: false,
@@ -367,8 +380,8 @@ class _CaixaPageState extends State<CaixaPage> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Container(
-                    width: getMaxSizedBoxWidth(context) * 0.5,
-                    padding: getPaddingDefault(context),
+                    width: getMaxSizedBoxWidth(context) * (gDevice.isTabletAll ? 0.8 : 0.8),
+                    padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 2 : 1),
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.only(
                         topRight: Radius.circular(30),
@@ -379,7 +392,10 @@ class _CaixaPageState extends State<CaixaPage> {
                     child: Row(
                       children: [
                         const Icon(Icons.assignment_ind_outlined),
-                        Text(_cupom.primeiroNomeComissionado),
+                        Text(
+                          _cupom.primeiroNomeComissionado,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
                   ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.black54),
@@ -409,26 +425,38 @@ class _CaixaPageState extends State<CaixaPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Container(
-                    width: getMaxSizedBoxWidth(context) * 0.7,
-                    padding: getPaddingDefault(context),
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(30),
-                        bottomRight: Radius.circular(30),
+                  InkWell(
+                    onTap: () {
+                      editaCliente(
+                        context,
+                        modoCliente,
+                        registroCliente,
+                      );
+                    },
+                    child: Container(
+                      width: getMaxSizedBoxWidth(context) * (gDevice.isTabletAll ? 0.8 : 0.9),
+                      padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 2 : 1),
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                        gradient: gradient,
                       ),
-                      gradient: gradient,
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.emoji_emotions_outlined),
-                        Text('${_cupom.idCliente} ${_cupom.nomeCliente}'),
-                      ],
-                    ),
-                  ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 200.ms, duration: 4000.ms, color: Colors.black54),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.emoji_emotions_outlined),
+                          Text(
+                            '${_cupom.nomeCliente} - ${(modoCliente.index == LeClienteModo.celular.index ? registroCliente.celular : registroCliente.cpfCnpjF)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 200.ms, duration: 4000.ms, color: Colors.black54),
+                  ),
                 ],
               ),
-              const SizedBox(height: 42)
+              SizedBox(height: (42 * (gDevice.isTabletAll ? 1.4 : 1)))
             ],
           );
   }
@@ -459,12 +487,16 @@ class _CaixaPageState extends State<CaixaPage> {
                           child: AnimatedContainer(
                             duration: Duration(milliseconds: painelDeExpansaoPreco ? 300 : 600),
                             height: painelDeExpansaoPreco
-                                ? getMaxSizedBoxWidth(context)
+                                ? gDevice.isTabletAll
+                                    ? getMaxSizedBoxWidth(context) * .7
+                                    : getMaxSizedBoxWidth(context)
                                 : gDevice.isTabletAll
                                     ? 180
                                     : 90,
                             width: painelDeExpansaoPreco
-                                ? getMaxSizedBoxWidth(context)
+                                ? gDevice.isTabletAll
+                                    ? getMaxSizedBoxWidth(context) * .8
+                                    : getMaxSizedBoxWidth(context)
                                 : gDevice.isTabletAll
                                     ? 180
                                     : 90,
@@ -475,7 +507,13 @@ class _CaixaPageState extends State<CaixaPage> {
                                   width: 1,
                                 ),
                                 borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(painelDeExpansaoPreco ? 300 : 190),
+                                  topLeft: Radius.circular(painelDeExpansaoPreco
+                                      ? gDevice.isTabletAll
+                                          ? 500
+                                          : 300
+                                      : gDevice.isTabletAll
+                                          ? 390
+                                          : 190),
                                 ),
                                 color: FacileTheme.getColorHard(context),
                               ),
@@ -572,7 +610,7 @@ class _CaixaPageState extends State<CaixaPage> {
                                               style: TextStyle(
                                                 fontSize: painelDeExpansaoPreco
                                                     ? gDevice.isTabletAll
-                                                        ? 100
+                                                        ? 80
                                                         : 60
                                                     : gDevice.isTabletAll
                                                         ? 28
@@ -640,10 +678,10 @@ class _CaixaPageState extends State<CaixaPage> {
           /// Item produto da lista
           ///
           child: Container(
-            height: FacileDevice().isTabletAll ? 170 : 130,
+            height: gDevice.isTabletAll ? 170 : 130,
             margin: EdgeInsets.only(
               left: 8,
-              top: FacileDevice().isTabletAll ? 5 : 10,
+              top: gDevice.isTabletAll ? 5 : 10,
               right: 8,
             ),
             padding: const EdgeInsets.all(4.0),
@@ -785,7 +823,7 @@ class _CaixaPageState extends State<CaixaPage> {
                       ),
 
                       /// **************************
-                      /// Detalhe
+                      /// EAN
                       ///
                       Flexible(
                         child: Container(
@@ -815,13 +853,13 @@ class _CaixaPageState extends State<CaixaPage> {
                   ),
 
                   /// **************************
-                  /// Item
+                  /// Item 00x a esqueda
                   ///
                   Opacity(
                     opacity: 0.8,
                     child: Container(
-                      height: 30,
-                      width: FacileDevice().isTabletAll ? 70 : 40,
+                      height: gDevice.isTabletAll ? 40 : 30,
+                      width: gDevice.isTabletAll ? 60 : 40,
                       decoration: BoxDecoration(
                         borderRadius: const BorderRadius.only(
                           bottomRight: Radius.circular(15),
@@ -875,8 +913,8 @@ class _CaixaPageState extends State<CaixaPage> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             SizedBox(
-                              height: FacileDevice().isTabletAll ? 50 : 35,
-                              width: FacileDevice().isTabletAll ? 50 : 35,
+                              height: gDevice.isTabletAll ? 50 : 35,
+                              width: gDevice.isTabletAll ? 50 : 35,
                               child: FittedBox(
                                 child: FloatingActionButton.extended(
                                   heroTag: null,
@@ -892,7 +930,7 @@ class _CaixaPageState extends State<CaixaPage> {
                               ),
                             ),
                             SizedBox(
-                              width: FacileDevice().isTabletAll ? 35 : 25,
+                              width: gDevice.isTabletAll ? 35 : 25,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 children: [
@@ -904,8 +942,8 @@ class _CaixaPageState extends State<CaixaPage> {
                               ),
                             ),
                             SizedBox(
-                              height: FacileDevice().isTabletAll ? 50 : 35,
-                              width: FacileDevice().isTabletAll ? 50 : 35,
+                              height: gDevice.isTabletAll ? 50 : 35,
+                              width: gDevice.isTabletAll ? 50 : 35,
                               child: FittedBox(
                                 child: FloatingActionButton.extended(
                                   heroTag: null,
@@ -942,8 +980,8 @@ class _CaixaPageState extends State<CaixaPage> {
                               Stack(
                                 children: [
                                   Container(
-                                    height: FacileDevice().isTabletAll ? 45 : 35,
-                                    width: FacileDevice().isTabletAll ? getMaxSizedBoxWidth(context) / 2 : getMaxSizedBoxWidth(context),
+                                    height: gDevice.isTabletAll ? 45 : 35,
+                                    width: gDevice.isTabletPortrait ? getMaxSizedBoxWidth(context) * 0.7 : getMaxSizedBoxWidth(context),
                                     padding: const EdgeInsets.all(0),
                                     decoration: BoxDecoration(
                                       borderRadius: const BorderRadius.only(
@@ -980,7 +1018,7 @@ class _CaixaPageState extends State<CaixaPage> {
                                         mainAxisAlignment: MainAxisAlignment.end,
                                         children: [
                                           badges.Badge(
-                                            badgeContent: _cupom.itens[index].temDesconto ? Icon(Icons.attach_money, color: Colors.white, size: FacileDevice().isTabletAll ? 10 : 10) : const SizedBox(),
+                                            badgeContent: _cupom.itens[index].temDesconto ? Icon(Icons.attach_money, color: Colors.white, size: gDevice.isTabletAll ? 10 : 10) : const SizedBox(),
                                             position: badges.BadgePosition.topEnd(top: -20, end: -0),
                                             badgeColor: _cupom.itens[index].temDesconto ? Colors.red : Colors.transparent,
                                             child: Row(
@@ -1030,12 +1068,13 @@ class _CaixaPageState extends State<CaixaPage> {
       );
     } else {
       return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           getEspacadorTriplo(),
           getEspacadorTriplo(),
-          FacileDevice().isPhoneAll || FacileDevice().isTabletAll ? const SizedBox() : getEspacadorTriplo(),
-          FacileDevice().isPhoneAll || FacileDevice().isTabletAll ? const SizedBox() : getEspacadorTriplo(),
-          FacileDevice().isPhoneAll || FacileDevice().isTabletAll ? const SizedBox() : getEspacadorTriplo(),
+          gDevice.isPhoneAll || gDevice.isTabletAll ? const SizedBox() : getEspacadorTriplo(),
+          gDevice.isPhoneAll || gDevice.isTabletAll ? const SizedBox() : getEspacadorTriplo(),
+          gDevice.isPhoneAll || gDevice.isTabletAll ? const SizedBox() : getEspacadorTriplo(),
           Icon(
             Icons.shopping_cart_outlined,
             size: 170,
@@ -1053,19 +1092,40 @@ class _CaixaPageState extends State<CaixaPage> {
 
           _cupom.itens.isNotEmpty
               ? const SizedBox()
-              : Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        FacileTheme.headlineSmall(context, 'SAIR'),
-                      ],
-                    ),
-                    onPressed: () {
+              : AvatarGlow(
+                  glowColor: FacileTheme.getColorHard(context),
+                  endRadius: 120,
+                  duration: const Duration(milliseconds: 1000),
+                  repeat: true,
+                  showTwoGlows: true,
+                  repeatPauseDuration: const Duration(milliseconds: 100),
+                  child: InkWell(
+                    onTap: () {
                       Navigator.pop(context, 'back');
                     },
+                    child: Material(
+                      elevation: 8.0,
+                      shape: const CircleBorder(),
+                      child: CircleAvatar(
+                        backgroundColor: FacileTheme.getColorHard(context),
+                        radius: gDevice.isTabletAll ? 80 : 50,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.logout_outlined,
+                              size: gDevice.isTabletAll ? 80 : 40,
+                              color: Colors.white,
+                            ),
+                            FacileTheme.headlineMedium(
+                              context,
+                              'SAIR',
+                              invert: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
 
@@ -1228,6 +1288,12 @@ class _CaixaPageState extends State<CaixaPage> {
     } else if (aResult != null && aResult['Status'] == 'OK') {
       Iterable vProduto = await aResult['listProdutos'];
       var listProdutos = vProduto.map((model) => Produto.fromMap(model)).toList();
+
+      if (listProdutos.isEmpty) {
+        gDevice.beepErr();
+        return;
+      }
+
       var produto = listProdutos.first;
 
       Iterable vVariacoes = jsonDecode(produto.variacoes);
@@ -1712,11 +1778,69 @@ class _CaixaPageState extends State<CaixaPage> {
     });
   }
 
+  void editaCliente(context, LeClienteModo modo, CadastroUnico registro) {
+    setState(() {
+      _cupom.idCliente = registro.id;
+      _cupom.nomeCliente = registro.nome;
+    });
+
+    showCupertinoModalBottomSheet(
+      backgroundColor: FacileTheme.getShadowColor(context),
+      duration: getCupertinoModalBottomSheetDuration(),
+      context: context,
+      builder: (context) => EditaClientePage(
+        title: 'INFORME OS DADOS DO CLIENTE',
+        modo: modo,
+        registro: registro,
+      ),
+    ).then(
+      (value) {
+        if (value != null && value.action == 'okClick') {
+          setState(() {
+            _cupom.idCliente = registro.id;
+            _cupom.nomeCliente = registro.nome;
+          });
+        }
+      },
+    );
+  }
+
   void lerCliente(context, title, LeClienteModo modo) {
-    aplicaCliente(value) {
-      setState(() {
-        _cupom.idCliente = value;
-      });
+    aplicaCliente(value) async {
+      Map<String, String> params = {
+        'Funcao': 'Busca',
+        'chave': value,
+        'tipoChave': (modo.index == LeClienteModo.cpf.index || modo.index == LeClienteModo.cnpj.index ? 'cpfcnpj' : 'celular'),
+      };
+
+      var aResult = await facilePostEx(context, 'cadastros-clientes.php', params, showProc: false);
+
+      if (aResult == null) {
+      } else if (aResult != null && aResult['Status'] == 'OK') {
+        setState(() {
+          List<CadastroUnico> listClientes = List.empty();
+
+          Iterable v = aResult['listClientes'];
+          listClientes = v.map((model) => CadastroUnico.fromMap(model)).toList();
+
+          if (listClientes.isEmpty) {
+            gDevice.beepErr();
+            return;
+          }
+
+          modoCliente = modo;
+          registroCliente = listClientes.first;
+
+          editaCliente(
+            context,
+            modoCliente,
+            registroCliente,
+          );
+          snackBarMsg(context, aResult['Msg']);
+        });
+      } else {
+        facileSnackBarError(context, 'Ops!', aResult['Msg']);
+      }
     }
 
     showCupertinoModalBottomSheet(
@@ -1777,7 +1901,7 @@ class _CaixaPageState extends State<CaixaPage> {
 
     var jVenda = <String, dynamic>{
       'hash': getUniqueID(),
-      'host': _cupom.host,
+      'host': gUsuario.terminalHost,
       'idLoja': _cupom.idLojaFisica,
       'idEmpresa': _cupom.idEmpresa,
       'idFuncionario': gUsuario.idFuncionario,
@@ -1797,13 +1921,36 @@ class _CaixaPageState extends State<CaixaPage> {
       'comissaoTotal': _cupom.subTotal,
       'idFuncionarioComissionado': _cupom.idFuncionarioComissionado,
       'idCliente': _cupom.idCliente,
-      'itens': jItens
+      'itens': jItens,
+      'cpfCnpj': registroCliente.cpfCnpj,
+      'celular': registroCliente.celular,
     };
 
     var j = json.encode(jVenda);
 
     log('cupom::$j');
+
+    Map<String, String> params = {
+      'Funcao': 'VendaInclui',
+      'jsonVenda': j,
+    };
+
+    var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: true);
+
+    if (aResult == null) {
+    } else if (aResult != null && aResult['Status'] == 'OK') {
+      facileSnackBarSucess(context, 'Show!', aResult['Msg']);
+      imprime(context);
+      setState(() {
+        painelDeExpansaoPreco = false;
+        _cupom.limpa();
+      });
+    } else {
+      facileSnackBarError(context, 'Ops!', aResult['Msg']);
+    }
   }
+
+  void imprime(context) {}
 
   ///
   /// Fim

@@ -43,8 +43,8 @@ double getMaxSizedBoxHeight(context) {
   return MediaQuery.of(context).size.height * (gDevice.isWindows ? 0.9 : 0.9);
 }
 
-double getMaxSizedBoxLottie(context) {
-  double v = MediaQuery.of(context).size.height * (gDevice.isWindows || gDevice.isTabletLandscape ? 0.6 : 0.5);
+double getMaxSizedBoxLottieHeight(context) {
+  double v = MediaQuery.of(context).size.height * (gDevice.isWindows || gDevice.isTabletLandscape ? 0.6 : 0.25);
 
   if (gDevice.isTabletPortrait) {
     v = MediaQuery.of(context).size.height * 0.3;
@@ -331,7 +331,7 @@ showLoading(BuildContext context) {
         child: Column(
           children: <Widget>[
             SizedBox(
-              width: getMaxSizedBoxLottie(context),
+              width: getMaxSizedBoxLottieHeight(context),
               child: Lottie.asset(
                 'imagens/loading.json',
                 fit: BoxFit.contain,
@@ -381,10 +381,10 @@ void facileSnackBarSucess(context, caption, msg, {dur = 2000, VoidCallback? onTh
 void snackBarMsg(context, msg, {dur = 1000}) {
   var gradient = LinearGradient(
     colors: [
-      (gTema.modo == 'dark' ? Colors.grey.withOpacity(0.5) : Colors.grey.withOpacity(0.5)),
-      (gTema.modo == 'dark' ? Colors.grey.withOpacity(0.5) : Colors.grey.withOpacity(0.5)),
-      (gTema.modo == 'dark' ? Colors.grey.withOpacity(0.5) : Colors.grey.withOpacity(0.5)),
-      (gTema.modo == 'dark' ? Colors.grey.withOpacity(0.5) : Colors.grey.withOpacity(0.5)),
+      (gTema.modo == 'dark' ? Colors.orange.withOpacity(0.6) : Colors.orange.withOpacity(0.6)),
+      (gTema.modo == 'dark' ? Colors.orange.withOpacity(0.6) : Colors.orange.withOpacity(0.6)),
+      (gTema.modo == 'dark' ? Colors.orange.withOpacity(0.6) : Colors.orange.withOpacity(0.6)),
+      (gTema.modo == 'dark' ? Colors.orange.withOpacity(0.6) : Colors.orange.withOpacity(0.6)),
     ],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
@@ -393,7 +393,7 @@ void snackBarMsg(context, msg, {dur = 1000}) {
   var snackBar = SnackBar(
     elevation: 0,
     backgroundColor: Colors.transparent,
-    behavior: SnackBarBehavior.floating,
+    behavior: SnackBarBehavior.fixed,
     duration: Duration(milliseconds: dur),
     content: Padding(
       padding: EdgeInsets.only(bottom: getMaxSizedBoxHeight(context) * .05),
@@ -405,7 +405,7 @@ void snackBarMsg(context, msg, {dur = 1000}) {
             children: [
               Container(
                 width: getMaxSizedBoxWidth(context) * 0.8,
-                padding: getPaddingDefault(context),
+                padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 3 : 2),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(30),
                   gradient: gradient,
@@ -413,7 +413,7 @@ void snackBarMsg(context, msg, {dur = 1000}) {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    FacileTheme.displaySmall(context, msg),
+                    gDevice.isTabletAll ? FacileTheme.displayLarge(context, msg) : FacileTheme.displayMedium(context, msg),
                   ],
                 ),
               ).animate().flip(),
@@ -445,7 +445,7 @@ void facileSnackBarError(context, caption, msg, {dur = 2000}) {
   // ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }
 
-PreferredSizeWidget? getCupertinoAppBar(context, caption, icons) {
+PreferredSizeWidget? getCupertinoAppBar(context, caption, icons, {addClose = true}) {
   List<Widget> actions = [];
 
   for (var fab in icons) {
@@ -456,12 +456,14 @@ PreferredSizeWidget? getCupertinoAppBar(context, caption, icons) {
     );
     actions.add(w);
   }
-  actions.add(IconButton(
-      icon: Icon(Icons.close, size: gDevice.isWindows || gDevice.isTabletAll ? 32 : null),
-      color: Theme.of(context).colorScheme.primary,
-      onPressed: () {
-        Navigator.pop(context);
-      }));
+  if (addClose) {
+    actions.add(IconButton(
+        icon: Icon(Icons.close, size: gDevice.isWindows || gDevice.isTabletAll ? 32 : null),
+        color: Theme.of(context).colorScheme.primary,
+        onPressed: () {
+          Navigator.pop(context);
+        }));
+  }
 
   return AppBar(
     centerTitle: true,

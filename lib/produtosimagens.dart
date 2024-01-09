@@ -191,7 +191,7 @@ class _ProdutosImagensState extends State<ProdutosImagens> {
         ],
       ),
       Container(
-        //width: getMaxSizedBoxLottie(context) * .9,
+        //width: getMaxSizedBoxLottieHeight(context) * .9,
         //height: 300,
         margin: const EdgeInsets.all(8),
         // child: widget.produto.imagemPrincipal.contains('sem-foto')
@@ -200,7 +200,7 @@ class _ProdutosImagensState extends State<ProdutosImagens> {
         //           '#B0BEC5',
         //           gTema.colorArray[gTema.cor].toHex().replaceAll('#ff', '#'),
         //         ),
-        //         width: getMaxSizedBoxLottie(context) * .8,
+        //         width: getMaxSizedBoxLottieHeight(context) * .8,
         //       )
         //     : ClipRRect(
         //         borderRadius: BorderRadius.circular(10.0),
@@ -213,7 +213,7 @@ class _ProdutosImagensState extends State<ProdutosImagens> {
                   '#B0BEC5',
                   gTema.colorArray[gTema.cor].toHex().replaceAll('#ff', '#'),
                 ),
-                width: getMaxSizedBoxLottie(context) * .8,
+                width: getMaxSizedBoxLottieHeight(context) * .8,
               )
             : listImagensProduto.isEmpty
                 ? null

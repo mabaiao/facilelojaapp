@@ -499,7 +499,6 @@ class _ProdutosEditarState extends State<ProdutosEditar> {
           );
         },
         child: Container(
-          //width: getMaxSizedBoxLottie(context) * .5,
           margin: const EdgeInsets.all(8),
           child: Hero(
             tag: 'heroProduto${widget.produto.id}',
@@ -511,7 +510,7 @@ class _ProdutosEditarState extends State<ProdutosEditar> {
                         '#B0BEC5',
                         gTema.colorArray[gTema.cor].toHex().replaceAll('#ff', '#'),
                       ),
-                      width: getMaxSizedBoxLottie(context) * .8,
+                      width: getMaxSizedBoxLottieHeight(context) * .8,
                     )
                   : getImageDefault(context, widget.produto.imagemPrincipal),
             ),

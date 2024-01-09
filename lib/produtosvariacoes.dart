@@ -116,7 +116,7 @@ class _EditaProdutoVariacaoState extends State<EditaProdutoVariacao> {
           );
         },
         child: Container(
-          //width: getMaxSizedBoxLottie(context) * .5,
+          //width: getMaxSizedBoxLottieHeight(context) * .5,
           margin: const EdgeInsets.all(8),
           child: Padding(
             padding: const EdgeInsets.all(1),
@@ -126,7 +126,7 @@ class _EditaProdutoVariacaoState extends State<EditaProdutoVariacao> {
                       '#B0BEC5',
                       gTema.colorArray[gTema.cor].toHex().replaceAll('#ff', '#'),
                     ),
-                    width: getMaxSizedBoxLottie(context) * .8,
+                    width: getMaxSizedBoxLottieHeight(context) * .8,
                   )
                 : getImageDefault(context, widget.produto.imagemPrincipal),
           ),

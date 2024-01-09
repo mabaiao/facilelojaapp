@@ -89,11 +89,11 @@ class _ConfiguraImpressoraExState extends State<ConfiguraImpressoraExPage> {
     if (scanModo == 'wait') {
       w1.add(
         // SizedBox(
-        //   width: getMaxSizedBoxLottie(context),
+        //   width: getMaxSizedBoxLottieHeight(context),
         //   child: Lottie.asset('imagens/configuraimpressoraWait.json'),
         // ),
         SizedBox(
-          height: getMaxSizedBoxLottie(context) / 2,
+          height: getMaxSizedBoxLottieHeight(context),
           child: svg.isEmpty
               ? const SizedBox()
               : SizedBox(
@@ -109,7 +109,7 @@ class _ConfiguraImpressoraExState extends State<ConfiguraImpressoraExPage> {
     if (scanModo == 'scan') {
       w1.add(
         SizedBox(
-          width: getMaxSizedBoxLottie(context),
+          width: getMaxSizedBoxLottieHeight(context),
           child: Lottie.asset('imagens/configuraimpressoraBlue.json'),
         ),
       );
@@ -118,7 +118,7 @@ class _ConfiguraImpressoraExState extends State<ConfiguraImpressoraExPage> {
     if (scanModo == 'ok') {
       w1.add(
         SizedBox(
-          width: getMaxSizedBoxLottie(context),
+          width: getMaxSizedBoxLottieHeight(context),
           child: Lottie.asset('imagens/configuraimpressoraOk.json'),
         ),
       );

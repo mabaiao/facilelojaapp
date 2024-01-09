@@ -1339,7 +1339,6 @@ void impressaoLeituraGerencial(
             Navigator.pop(context);
           });
     } catch (e) {
-      // TODO:  Verificar
       // facilePrintErro(context);
     }
   } else {

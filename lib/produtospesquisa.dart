@@ -62,7 +62,7 @@ class _ProdutosPesquisaState extends State<ProdutosPesquisaPage> {
 
     List<Widget> w1 = [
       SizedBox(
-        height: getMaxSizedBoxLottie(context) / 2,
+        height: getMaxSizedBoxLottieHeight(context),
         child: svg.isEmpty
             ? const SizedBox()
             : SizedBox(
@@ -75,6 +75,7 @@ class _ProdutosPesquisaState extends State<ProdutosPesquisaPage> {
     ];
 
     List<Widget> w2 = [
+      getEspacadorDuplo(),
       TextField(
         textInputAction: TextInputAction.search,
         autofocus: (gDevice.isTabletAll || gDevice.isWindows ? true : true),

@@ -78,7 +78,7 @@ class _AutorizaState extends State<AutorizaPage> {
     List<Widget> w1 = [
       FacileTheme.headlineMedium(context, widget.title),
       SizedBox(
-        height: getMaxSizedBoxLottie(context) / 2,
+        height: getMaxSizedBoxLottieHeight(context),
         child: svg.isEmpty
             ? const SizedBox()
             : SizedBox(

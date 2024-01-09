@@ -342,7 +342,7 @@ class _ProdutosState extends State<ProdutosPage> {
             body: (isLoad
                 ? Center(
                     child: SizedBox(
-                      width: getMaxSizedBoxLottie(context),
+                      width: getMaxSizedBoxLottieHeight(context),
                       child: Lottie.asset(
                         'imagens/loading.json',
                         fit: BoxFit.contain,

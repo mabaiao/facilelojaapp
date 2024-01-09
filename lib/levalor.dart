@@ -93,7 +93,7 @@ class _LeValorState extends State<LeValorPage> {
       FacileTheme.headlineMedium(context, widget.title),
       FacileTheme.displayMedium(context, 'Limite em ${format.format(widget.limite)} ${widget.modo == LeValorModo.percentual ? "%" : ""}'),
       SizedBox(
-        height: getMaxSizedBoxLottie(context) / 2,
+        height: getMaxSizedBoxLottieHeight(context),
         child: svg.isEmpty
             ? const SizedBox()
             : SizedBox(
@@ -186,6 +186,8 @@ class _LeValorState extends State<LeValorPage> {
           backgroundColor: Colors.red.shade900,
         ),
         onPressed: () {
+          gDevice.beep();
+
           senha = '';
           setState(() {});
         },
@@ -209,6 +211,8 @@ class _LeValorState extends State<LeValorPage> {
       caption: caption,
       style: ElevatedButton.styleFrom(),
       onPressed: () {
+        gDevice.beep();
+
         if (widget.modo == LeValorModo.percentual) {
           if (senha.length < 5) {
             senha += caption;
@@ -225,6 +229,7 @@ class _LeValorState extends State<LeValorPage> {
 
   void retornarValor(context) async {
     if (senha.trim().isEmpty) {
+      gDevice.beepErr();
       facileSnackBarError(context, 'Ops!', 'INFORME ${widget.title}');
       return;
     }

@@ -59,7 +59,7 @@ class _RegistroState extends State<RegistroPage> {
 
     List<Widget> w1 = [
       SizedBox(
-        height: getMaxSizedBoxLottie(context) / 2,
+        height: getMaxSizedBoxLottieHeight(context),
         child: svg.isEmpty
             ? const SizedBox()
             : SizedBox(

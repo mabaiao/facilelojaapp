@@ -90,7 +90,7 @@ class _LogonState extends State<LogonPage> {
       FacileTheme.headlineMedium(context, 'Conectar em'),
       FacileTheme.headlineMedium(context, gUsuario.subdominio.toUpperCase()),
       SizedBox(
-        height: getMaxSizedBoxLottie(context) / 2,
+        height: getMaxSizedBoxLottieHeight(context),
         child: svg.isEmpty
             ? const SizedBox()
             : SizedBox(

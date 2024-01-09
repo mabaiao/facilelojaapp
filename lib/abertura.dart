@@ -69,7 +69,7 @@ class _IniciaPageState extends State<IniciaPage> {
                   getLogo(context, proporcao: gDevice.isTabletAll || gDevice.isWindows ? 1.5 : 1),
                   SizedBox(
                     height: 200,
-                    //6width: getMaxSizedBoxLottie(context),
+                    //6width: getMaxSizedBoxLottieHeight(context),
                     child: Lottie.asset(
                       'imagens/loading.json',
                       fit: BoxFit.contain,
@@ -253,7 +253,7 @@ class _AberturaState extends State<AberturaPage> {
 
     List<Widget> w2 = [
       SizedBox(
-        height: getMaxSizedBoxLottie(context),
+        height: getMaxSizedBoxLottieHeight(context),
         child: svg.isEmpty
             ? const SizedBox()
             : SizedBox(
@@ -283,7 +283,7 @@ class _AberturaState extends State<AberturaPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: getMaxSizedBoxLottie(context) * .3,
+                    width: getMaxSizedBoxLottieHeight(context) * .3,
                     child: Lottie.asset(
                       'imagens/loading.json',
                       fit: BoxFit.contain,
