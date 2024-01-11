@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:confetti/confetti.dart';
 
 import 'caixa.dart';
 
@@ -24,24 +23,19 @@ class MenuPage extends StatefulWidget {
 class _MenuPageState extends State<MenuPage> {
   bool isLoad = false;
   List<Widget> bg = [];
-  late ConfettiController _controllerCenter;
 
   @override
   void initState() {
     super.initState();
-    _controllerCenter = ConfettiController(duration: const Duration(seconds: 1));
     load(context);
   }
 
   @override
   void dispose() {
-    _controllerCenter.dispose();
     super.dispose();
   }
 
-  void load(context) async {
-    _controllerCenter.play();
-  }
+  void load(context) async {}
 
   void onFocusKey(context, RawKeyEvent event) {
     var s = event.logicalKey.keyLabel.toString().replaceAll('Numpad ', '').replaceAll('Digit ', '').replaceAll('Key ', '').replaceAll('Space', ' ');
@@ -341,29 +335,12 @@ class _MenuPageState extends State<MenuPage> {
           return true;
         },
         child: SafeArea(
-          child: Stack(
-            children: [
-              Scaffold(
-                body: getStackCupertino(
-                  context,
-                  getBackground(context),
-                  getBody(context, w1, w2, flex1: 4, flex2: 6, mainAxisAlignment: MainAxisAlignment.center),
-                ),
-              ),
-              Align(
-                alignment: Alignment.topCenter,
-                child: ConfettiWidget(
-                  maximumSize: const Size(20, 20),
-                  shouldLoop: false,
-                  confettiController: _controllerCenter,
-                  blastDirectionality: BlastDirectionality.explosive,
-                  maxBlastForce: 20,
-                  minBlastForce: 8,
-                  emissionFrequency: .3,
-                  gravity: .1,
-                ),
-              ),
-            ],
+          child: Scaffold(
+            body: getStackCupertino(
+              context,
+              getBackground(context),
+              getBody(context, w1, w2, flex1: 4, flex2: 6, mainAxisAlignment: MainAxisAlignment.center),
+            ),
           ),
         ),
       ),

@@ -9,6 +9,10 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/widgets.dart';
 import 'package:printing/printing.dart';
 
+import 'dados/empresa.dart';
+import 'dados/venda.dart';
+import 'main.dart';
+
 /// **************************
 /// Cupom
 ///
@@ -29,6 +33,7 @@ enum CupomStatus {
 }
 
 class Cupom {
+  String id = '0';
   String idLojaFisica;
   String idEmpresa;
   String idFuncionario;
@@ -105,6 +110,7 @@ class Cupom {
   }
 
   void _limpa() {
+    id = '0';
     idPai = '0';
     idFuncionarioComissionado = '0';
     primeiroNomeComissionado = '';
@@ -448,6 +454,497 @@ class Cupom {
     descontoF = desconto == 0.00 ? '-' : format.format(desconto);
     totalF = total == 0.00 ? '-' : format.format(total);
   }
+
+  void impressaoCupom(context, Empresa empresa, Venda venda, opcoesImpressao, String modo) async {
+    var subdominio = gUsuario.subdominio;
+    var cupom = this;
+
+    final doc = pw.Document();
+    final fontDetalhe = await PdfGoogleFonts.ubuntuMonoRegular();
+    final fontTitulo = await PdfGoogleFonts.staatlichesRegular();
+    final fontCancelado = await PdfGoogleFonts.rubikMonoOneRegular();
+    final consumidor = cupom.cpfCnpj.isEmpty ? 'CONSUMIDOR NÃO IDENTIFICADO' : 'CONSUMIDOR FINAL ${cupom.cpfCnpj}';
+    //final netImage = await networkImage(empresa.logo);
+    const temFiscal = 'N';
+
+    final impressaoTamanhoFonteTexto = double.parse(opcoesImpressao['_impressaoTamanhoFonteTexto']);
+    final impressaoTamanhoFonteProduto = double.parse(opcoesImpressao['_impressaoTamanhoFonteProduto']);
+    final impressaoTamanhoFonteProdutoValores = double.parse(opcoesImpressao['_impressaoTamanhoFonteProdutoValores']);
+    final impressaoTamanhoFonteTitulo = double.parse(opcoesImpressao['_impressaoTamanhoFonteTitulo']);
+    final impressaoTamanhoFonteSubTitulo = double.parse(opcoesImpressao['_impressaoTamanhoFonteSubTitulo']);
+    final impressaoTamanhoFonteTotais = double.parse(opcoesImpressao['_impressaoTamanhoFonteTotais']);
+    final impressaoTamanhoPapel = opcoesImpressao['_impressaoTamanhoPapel'];
+    final impressaoEspacamento = double.parse(opcoesImpressao['_impressaoEspacamento']);
+    final impressaoTextoAdicionalContato = opcoesImpressao['_impressaoTextoAdicionalContato'];
+    final impressaoTextoAdicionalRodape = opcoesImpressao['_impressaoTextoAdicionalRodape'];
+    //final impressaoImprimeTributos = opcoesImpressao['_impressaoImprimeTributos'];
+    final impressaoTelefonePadrao = opcoesImpressao['_impressaoTelefonePadrao'];
+    final String impressaoTelefoneCelular = opcoesImpressao['_impressaoTelefoneCelular'].toString();
+    final String impressaoTelefoneFixo = opcoesImpressao['_impressaoTelefoneFixo'].toString();
+
+    ///
+    /// Parte fiscal
+    ///
+
+    pw.Widget wFiscal = pw.SizedBox();
+
+    if (temFiscal == 'S') {
+      // var aVenda = aResult['VendaFiscal'];
+      // String ch1 = aVenda['chaveAcesso'];
+      // String ch2 = aVenda['chaveAcesso'];
+      // final qrCode = Barcode.qrCode(errorCorrectLevel: BarcodeQRCorrectionLevel.low).toSvg(aVenda['qrCode'], width: 100, height: 100);
+
+      // ch1 = ch1.substring(0, 29);
+      // ch2 = ch2.substring(30, 54);
+
+      // wFiscal = pw.Column(
+      //   mainAxisAlignment: pw.MainAxisAlignment.center,
+      //   children: [
+      //     pw.Text('Via consumidor', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
+      //     pw.Text('Consulte em www.nfe.fazenda.gov.br/portal', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto - 4, fontWeight: pw.FontWeight.bold)),
+      //     pw.Text('Chave de acesso', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
+      //     pw.Text(ch1, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
+      //     pw.Text(ch2, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
+      //     pw.Text('Protocolo de autorização', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
+      //     pw.Text(aVenda['protocolo'] + ' Série ' + aVenda['serie'] + ' Número ' + aVenda['numero'], style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
+      //     pw.Padding(
+      //       padding: const pw.EdgeInsets.only(left: 20, right: 20),
+      //       child: pw.SvgImage(svg: qrCode),
+      //     ),
+      //     impressaoImprimeTributos == 'S' ? pw.Divider(height: impressaoEspacamento) : pw.SizedBox(),
+      //     impressaoImprimeTributos == 'S' ? pw.Text(aVenda['infCpl'], style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)) : pw.SizedBox(),
+      //     pw.Divider(height: impressaoEspacamento),
+      //   ],
+      // );
+    }
+
+    ///
+    /// Telefone de contato
+    ///
+
+    pw.Widget wContato = pw.SizedBox();
+    String sContato;
+
+    sContato = '';
+
+    if ((impressaoTelefonePadrao == 'Celular' || impressaoTelefonePadrao == 'Ambos') && impressaoTelefoneCelular.isNotEmpty) {
+      sContato = impressaoTelefoneCelular;
+    }
+
+    if ((impressaoTelefonePadrao == 'Fixo' || impressaoTelefonePadrao == 'Ambos') && impressaoTelefoneFixo.isNotEmpty) {
+      sContato += (' $impressaoTelefoneCelular');
+    }
+
+    if (sContato.isNotEmpty) {
+      wContato = pw.Text(sContato, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal));
+    }
+
+    ///
+    /// Cancelado
+    ///
+
+    pw.Widget wCancelado = pw.SizedBox();
+
+    if (cupom.status == '2') {
+      wCancelado = pw.Column(
+        children: [
+          pw.Text(
+            'CANCELADO',
+            style: pw.TextStyle(
+              font: fontCancelado,
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+              //color: const PdfColor(1.0, 0, 0),
+            ),
+          ),
+          pw.Text(
+            'EM ${venda.dataAlteracaoF}',
+            style: pw.TextStyle(
+              font: fontCancelado,
+              fontSize: 12,
+              fontWeight: pw.FontWeight.bold,
+              //color: const PdfColor(1.0, 0, 0),
+            ),
+          ),
+        ],
+      );
+    }
+
+    ///
+    /// Texto adicional do contato
+    ///
+
+    pw.Widget wTextoAdicionalContato = pw.SizedBox();
+
+    if (impressaoTextoAdicionalContato != '') {
+      wTextoAdicionalContato = pw.Text(impressaoTextoAdicionalContato, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal));
+    }
+
+    ///
+    /// Rodape
+    ///
+
+    pw.Widget wRodape = pw.SizedBox();
+
+    if (impressaoTextoAdicionalRodape != '') {
+      wRodape = pw.Column(
+        mainAxisAlignment: pw.MainAxisAlignment.center,
+        children: [
+          pw.Text(impressaoTextoAdicionalRodape, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
+        ],
+      );
+    }
+
+    ///
+    /// Cliente
+    ///
+
+    pw.Widget wCliente = pw.SizedBox();
+
+    if (cupom.nomeCliente != '') {
+      String endereco = cupom.enderecoCliente;
+      String celular = cupom.celular;
+      String email = cupom.email;
+
+      wCliente = pw.Column(
+        mainAxisAlignment: pw.MainAxisAlignment.start,
+        children: [
+          pw.Text('CLIENTE', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
+          pw.Text(cupom.nomeCliente, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal), textAlign: TextAlign.center),
+          celular.trim().isEmpty ? pw.SizedBox() : pw.Text(cupom.celular, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.normal)),
+          email.trim().isEmpty ? pw.SizedBox() : pw.Text(cupom.email, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.normal)),
+          endereco.trim().isEmpty
+              ? pw.SizedBox()
+              : pw.Text(cupom.enderecoCliente, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.normal), textAlign: TextAlign.center),
+          pw.Divider(height: impressaoEspacamento),
+        ],
+      );
+    }
+
+    ///
+    /// Id pedido Pai
+    ///
+
+    pw.Widget wPedido = pw.SizedBox();
+
+    if (cupom.idPai != '0') {
+      wPedido = pw.Column(
+        mainAxisAlignment: pw.MainAxisAlignment.start,
+        children: [
+          pw.Text('Pedido original no. ${cupom.idPai}', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
+          pw.Divider(height: impressaoEspacamento),
+        ],
+      );
+    }
+
+    ///
+    /// Atendimento
+    ///
+
+    pw.Widget wAtendimento = pw.SizedBox();
+
+    if (primeiroNomeComissionado != '') {
+      wAtendimento = pw.Column(
+        mainAxisAlignment: pw.MainAxisAlignment.start,
+        children: [
+          pw.Text('ATENDIMENTO $primeiroNomeComissionado', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
+          pw.Divider(height: impressaoEspacamento),
+          pw.Text(consumidor, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
+          pw.Divider(height: impressaoEspacamento),
+        ],
+      );
+    } else {
+      wAtendimento = pw.Column(
+        mainAxisAlignment: pw.MainAxisAlignment.start,
+        children: [
+          pw.Text(consumidor, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
+          pw.Divider(height: impressaoEspacamento),
+        ],
+      );
+    }
+
+    ///
+    /// Itens do cupom
+    ///
+
+    List<pw.Widget> list = [];
+
+    for (var i = 0; i < cupom.itens.length; i++) {
+      if (cupom.itens[i].peso > 0) {
+        list.add(
+          pw.Text(
+            '${(i + 1).toString().padLeft(3, '0')} ${cupom.itens[i].digitado} ${cupom.itens[i].nome}',
+            style: pw.TextStyle(fontSize: impressaoTamanhoFonteProduto, font: fontDetalhe),
+          ),
+        );
+      } else {
+        list.add(
+          pw.Text(
+            '${(i + 1).toString().padLeft(3, '0')} ${cupom.itens[i].digitado} ${cupom.itens[i].nome} - ${cupom.itens[i].unidadeSigla}',
+            style: pw.TextStyle(fontSize: impressaoTamanhoFonteProduto, font: fontDetalhe),
+          ),
+        );
+      }
+
+      list.add(
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.end,
+          children: [
+            pw.Text(
+              cupom.itens[i].linhaTotalImp,
+              textAlign: pw.TextAlign.right,
+              style: pw.TextStyle(fontSize: impressaoTamanhoFonteProdutoValores, font: fontDetalhe),
+            ),
+          ],
+        ),
+      );
+      if (cupom.itens[i].linhaTotalDescImp != '') {
+        list.add(
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.end,
+            children: [
+              pw.Text(
+                '(desconto) ${cupom.itens[i].linhaTotalDescImp}',
+                textAlign: pw.TextAlign.right,
+                style: pw.TextStyle(fontSize: impressaoTamanhoFonteProdutoValores, font: fontDetalhe),
+              ),
+            ],
+          ),
+        );
+      }
+
+      list.add(
+        pw.SizedBox(height: 4),
+      );
+    }
+
+    ///
+    /// Itens de pagamento
+    ///
+
+    List<pw.Widget> listPagtos = [];
+
+    for (var i = 0; i < cupom.pagtos.length; i++) {
+      int parcelas = cupom.pagtos[i].parcelas;
+      String nome = parcelas == 0 ? cupom.pagtos[i].nome : '${cupom.pagtos[i].nome} ${parcelas}x';
+
+      if (impressaoTamanhoFonteTotais <= 10) {
+        listPagtos.add(pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.end,
+          children: [
+            pw.Text(
+              nome + cupom.pagtos[i].valorF.padLeft(11),
+              style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais),
+            ),
+          ],
+        ));
+      } else {
+        var v = impressaoTamanhoFonteTotais <= 14
+            ? impressaoTamanhoFonteTotais <= 14
+                ? 3
+                : 6
+            : 8;
+        listPagtos.add(pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.end,
+          children: [
+            pw.Text(
+              nome,
+              style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais - v),
+            ),
+            pw.Text(
+              cupom.pagtos[i].valorF.padLeft(11),
+              style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais),
+            ),
+          ],
+        ));
+      }
+    }
+
+    double inch = 72.0;
+    double mm = inch / 25.4;
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat(double.parse(impressaoTamanhoPapel) * mm, double.infinity, marginAll: 1 * mm),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              ///
+              /// Cancelado
+              ///
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  wCancelado,
+                ],
+              ),
+
+              ///
+              /// Cabeçalho
+              ///
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  // pw.Padding(
+                  //   padding: const pw.EdgeInsets.only(left: 20, right: 20),
+                  //   child: pw.Image(netImage),
+                  // ),
+                  pw.Divider(height: impressaoEspacamento),
+                  pw.Text(empresa.nome, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal), textAlign: TextAlign.center),
+                  pw.Text('CNPJ:${empresa.cpfCnpj}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
+                  pw.Text('${empresa.logradouro} ${empresa.numero} ${empresa.complemento}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto), textAlign: TextAlign.center),
+                  pw.Text(empresa.bairro, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
+                  pw.Text('${empresa.municipio} - ${empresa.uF}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
+                  wContato,
+                  wTextoAdicionalContato,
+                  pw.Divider(height: impressaoEspacamento),
+                  pw.Text(tipoMovimento == '1' ? 'Venda X' : 'Pedido ${venda.idVenda}', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal)),
+                  pw.Text('Emissão:${empresa.dataCadastro}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
+                  pw.Text(venda.nomeFuncionarioOperador, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(venda.nomeCargoFuncionarioOperador, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
+                  pw.Divider(height: impressaoEspacamento),
+                  pw.Text('${cupom.qtdProdutos.toStringAsFixed(0)} Iten(s)', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
+                  pw.Divider(height: impressaoEspacamento),
+                ],
+              ),
+
+              ///
+              /// Itens
+              ///
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: list,
+              ),
+
+              ///
+              /// Totais
+              ///
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  //pw.Divider(height: _impressaoEspacamento),
+                  //pw.Text('Quantidade de itens: ' + cupom.qtdProdutos.toStringAsFixed(0), style: pw.TextStyle(font: fontDetalhe, fontSize: _impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
+                  pw.Divider(height: impressaoEspacamento),
+                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+                    pw.Text(('SUB-TOTAL ${cupom.subTotalF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
+                  ]),
+                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+                    pw.Text(('ACRÉSCIMO ${cupom.acrescimoF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
+                  ]),
+                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+                    pw.Text((' DESCONTO ${cupom.descontoF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
+                  ]),
+                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+                    pw.Text(('    TOTAL ${cupom.totalF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
+                  ]),
+                  //pw.Divider(height: _impressaoEspacamento),
+                  //pw.Text('Formas de pagamento', style: pw.TextStyle(font: fontDetalhe, fontSize: _impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
+                  //pw.Divider(height: _impressaoEspacamento),
+                ],
+              ),
+
+              ///
+              /// Formas de pagamentos
+              ///
+
+              pw.SizedBox(height: 3),
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: listPagtos,
+              ),
+
+              pw.SizedBox(height: 3),
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.end,
+                    children: [
+                      cupom.tipoMovimento == '2'
+                          ? pw.SizedBox()
+                          : pw.Text(
+                              ('     TROCO ${cupom.trocoF.padLeft(10)}'),
+                              style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais),
+                            ),
+                    ],
+                  ),
+                ],
+              ),
+
+              ///
+              /// Troco / Consumidor
+              ///
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Divider(height: impressaoEspacamento),
+                  wAtendimento,
+                  wPedido,
+                  wCliente,
+                  wFiscal,
+                  wRodape,
+                ],
+              ),
+
+              ///
+              /// Cancelado
+              ///
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  wCancelado,
+                ],
+              ),
+
+              ///
+              /// Fim
+              ///
+            ],
+          ); // Center
+        },
+      ),
+    ); // Page
+
+    if (modo == 'imprimir') {
+      try {
+        await Printing.layoutPdf(
+          onLayout: (PdfPageFormat format) async => doc.save(),
+          format: impressaoTamanhoPapel == '58' ? PdfPageFormat.roll57 : PdfPageFormat.roll80,
+          name: 'FACILE',
+        ).then((value) => () {
+              Navigator.pop(context);
+            });
+      } catch (e) {
+        //facilePrintErro(context);
+      }
+    } else if (modo == 'share') {
+      await facileSharePdf(await doc.save(), subdominio, 'CUPOM', '');
+    } else {
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (context) => PdfPreview(
+            allowPrinting: false,
+            allowSharing: false,
+            dpi: 300,
+            canDebug: false,
+            canChangeOrientation: false,
+            canChangePageFormat: false,
+            build: (PdfPageFormat format) => doc.save(),
+          ),
+        ),
+      );
+    }
+  }
 }
 
 class CupomItem {
@@ -577,496 +1074,6 @@ class CupomPagto {
       'valor': valor,
       'parcelas': parcelas,
     };
-  }
-}
-
-void impressaoCupom(context, subdominio, cupom, aResult, modo) async {
-  var aEmpresa = aResult['Empresa'];
-
-  final doc = pw.Document();
-  final fontDetalhe = await PdfGoogleFonts.ubuntuMonoRegular();
-  final fontTitulo = await PdfGoogleFonts.staatlichesRegular();
-  final fontCancelado = await PdfGoogleFonts.rubikMonoOneRegular();
-  final consumidor = cupom.cpfCnpj.isEmpty ? 'CONSUMIDOR NÃO IDENTIFICADO' : 'CONSUMIDOR FINAL ${cupom.cpfCnpj}';
-  final netImage = await networkImage(aEmpresa['Modelo']);
-  final temFiscal = aEmpresa['TemFiscal'];
-  final nomeAtendimento = aEmpresa['NomeAtendimento'];
-
-  final impressaoTamanhoFonteProduto = double.parse(aResult['_impressaoTamanhoFonteProduto']);
-  final impressaoTamanhoFonteProdutoValores = double.parse(aResult['_impressaoTamanhoFonteProdutoValores']);
-  final impressaoTamanhoFonteTitulo = double.parse(aResult['_impressaoTamanhoFonteTitulo']);
-  final impressaoTamanhoFonteSubTitulo = double.parse(aResult['_impressaoTamanhoFonteSubTitulo']);
-  final impressaoTamanhoFonteTotais = double.parse(aResult['_impressaoTamanhoFonteTotais']);
-  final impressaoTamanhoFonteTexto = double.parse(aResult['_impressaoTamanhoFonteTexto']);
-  final impressaoEspacamento = double.parse(aResult['_impressaoEspacamento']);
-  final impressaoTelefonePadrao = aResult['_impressaoTelefonePadrao'];
-  final impressaoTextoAdicionalContato = aResult['_impressaoTextoAdicionalContato'];
-  final impressaoTextoAdicionalRodape = aResult['_impressaoTextoAdicionalRodape'];
-  final impressaoImprimeTributos = aResult['_impressaoImprimeTributos'];
-  final impressaoTamanhoPapel = aResult['_impressaoTamanhoPapel'];
-
-  ///
-  /// Parte fiscal
-  ///
-
-  pw.Widget wFiscal = pw.SizedBox();
-
-  if (temFiscal == 'S') {
-    var aVenda = aResult['VendaFiscal'];
-    String ch1 = aVenda['chaveAcesso'];
-    String ch2 = aVenda['chaveAcesso'];
-    final qrCode = Barcode.qrCode(errorCorrectLevel: BarcodeQRCorrectionLevel.low).toSvg(aVenda['qrCode'], width: 100, height: 100);
-
-    ch1 = ch1.substring(0, 29);
-    ch2 = ch2.substring(30, 54);
-
-    wFiscal = pw.Column(
-      mainAxisAlignment: pw.MainAxisAlignment.center,
-      children: [
-        pw.Text('Via consumidor', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
-        pw.Text('Consulte em www.nfe.fazenda.gov.br/portal', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto - 4, fontWeight: pw.FontWeight.bold)),
-        pw.Text('Chave de acesso', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
-        pw.Text(ch1, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
-        pw.Text(ch2, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
-        pw.Text('Protocolo de autorização', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
-        pw.Text(aVenda['protocolo'] + ' Série ' + aVenda['serie'] + ' Número ' + aVenda['numero'], style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
-        pw.Padding(
-          padding: const pw.EdgeInsets.only(left: 20, right: 20),
-          child: pw.SvgImage(svg: qrCode),
-        ),
-        impressaoImprimeTributos == 'S' ? pw.Divider(height: impressaoEspacamento) : pw.SizedBox(),
-        impressaoImprimeTributos == 'S' ? pw.Text(aVenda['infCpl'], style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)) : pw.SizedBox(),
-        pw.Divider(height: impressaoEspacamento),
-      ],
-    );
-  }
-
-  ///
-  /// Telefone de contato
-  ///
-
-  pw.Widget wContato = pw.SizedBox();
-  String sContato;
-
-  sContato = aEmpresa['Celular'];
-
-  if (impressaoTelefonePadrao == 'Celular' && sContato.isNotEmpty) {
-    wContato = pw.Text(sContato, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal));
-  }
-
-  sContato = aEmpresa['Telefone'];
-
-  if (impressaoTelefonePadrao == 'Fixo' && sContato.isNotEmpty) {
-    wContato = pw.Text(sContato, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal));
-  }
-
-  ///
-  /// Cancelado
-  ///
-
-  pw.Widget wCancelado = pw.SizedBox();
-
-  if (cupom.status == '2') {
-    wCancelado = pw.Column(
-      children: [
-        pw.Text(
-          'CANCELADO',
-          style: pw.TextStyle(
-            font: fontCancelado,
-            fontSize: 18,
-            fontWeight: pw.FontWeight.bold,
-            //color: const PdfColor(1.0, 0, 0),
-          ),
-        ),
-        pw.Text(
-          'EM ${aEmpresa['dataAlteracaoF']}',
-          style: pw.TextStyle(
-            font: fontCancelado,
-            fontSize: 12,
-            fontWeight: pw.FontWeight.bold,
-            //color: const PdfColor(1.0, 0, 0),
-          ),
-        ),
-      ],
-    );
-  }
-
-  ///
-  /// Texto adicional do contato
-  ///
-
-  pw.Widget wTextoAdicionalContato = pw.SizedBox();
-
-  if (impressaoTextoAdicionalContato != '') {
-    wTextoAdicionalContato = pw.Text(impressaoTextoAdicionalContato, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal));
-  }
-
-  ///
-  /// Rodape
-  ///
-
-  pw.Widget wRodape = pw.SizedBox();
-
-  if (impressaoTextoAdicionalRodape != '') {
-    wRodape = pw.Column(
-      mainAxisAlignment: pw.MainAxisAlignment.center,
-      children: [
-        pw.Text(impressaoTextoAdicionalRodape, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
-      ],
-    );
-  }
-
-  ///
-  /// Cliente
-  ///
-
-  pw.Widget wCliente = pw.SizedBox();
-
-  if (cupom.nomeCliente != '') {
-    String endereco = cupom.enderecoCliente;
-    String celular = cupom.celular;
-    String email = cupom.email;
-
-    wCliente = pw.Column(
-      mainAxisAlignment: pw.MainAxisAlignment.start,
-      children: [
-        pw.Text('CLIENTE'),
-        pw.Divider(height: impressaoEspacamento),
-        pw.Text(cupom.nomeCliente, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal), textAlign: TextAlign.center),
-        celular.trim().isEmpty ? pw.SizedBox() : pw.Text(cupom.celular, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.normal)),
-        email.trim().isEmpty ? pw.SizedBox() : pw.Text(cupom.email, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.normal)),
-        endereco.trim().isEmpty
-            ? pw.SizedBox()
-            : pw.Text(cupom.enderecoCliente, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.normal), textAlign: TextAlign.center),
-        pw.Divider(height: impressaoEspacamento),
-      ],
-    );
-  }
-
-  ///
-  /// Id pedido Pai
-  ///
-
-  pw.Widget wPedido = pw.SizedBox();
-
-  if (cupom.idPai != '0') {
-    wPedido = pw.Column(
-      mainAxisAlignment: pw.MainAxisAlignment.start,
-      children: [
-        pw.Text('Pedido original no. ${cupom.idPai}', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
-        pw.Divider(height: impressaoEspacamento),
-      ],
-    );
-  }
-
-  ///
-  /// Atendimento
-  ///
-
-  pw.Widget wAtendimento = pw.SizedBox();
-
-  if (nomeAtendimento != '') {
-    wAtendimento = pw.Column(
-      mainAxisAlignment: pw.MainAxisAlignment.start,
-      children: [
-        pw.Text('ATENDIMENTO $nomeAtendimento', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
-        pw.Divider(height: impressaoEspacamento),
-        pw.Text(consumidor, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
-        pw.Divider(height: impressaoEspacamento),
-      ],
-    );
-  } else {
-    wAtendimento = pw.Column(
-      mainAxisAlignment: pw.MainAxisAlignment.start,
-      children: [
-        pw.Text(consumidor, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
-        pw.Divider(height: impressaoEspacamento),
-      ],
-    );
-  }
-
-  ///
-  /// Itens do cupom
-  ///
-
-  List<pw.Widget> list = [];
-
-  for (var i = 0; i < cupom.itens.length; i++) {
-    if (cupom.itens[i].peso > 0) {
-      list.add(
-        pw.Text(
-          // ignore: prefer_interpolation_to_compose_strings
-          '${(i + 1).toString().padLeft(3, '0') + ' ' + cupom.itens[i].digitado} ' + cupom.itens[i].nome,
-          style: pw.TextStyle(fontSize: impressaoTamanhoFonteProduto, font: fontDetalhe),
-        ),
-      );
-    } else {
-      list.add(
-        pw.Text(
-          // ignore: prefer_interpolation_to_compose_strings
-          '${(i + 1).toString().padLeft(3, '0') + ' ' + cupom.itens[i].digitado + ' ' + cupom.itens[i].nome} - ' + cupom.itens[i].unidadeSigla,
-          style: pw.TextStyle(fontSize: impressaoTamanhoFonteProduto, font: fontDetalhe),
-        ),
-      );
-    }
-
-    list.add(
-      pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.end,
-        children: [
-          pw.Text(
-            cupom.itens[i].linhaTotalImp,
-            textAlign: pw.TextAlign.right,
-            style: pw.TextStyle(fontSize: impressaoTamanhoFonteProdutoValores, font: fontDetalhe),
-          ),
-        ],
-      ),
-    );
-    if (cupom.itens[i].linhaTotalDescImp != '') {
-      list.add(
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.end,
-          children: [
-            pw.Text(
-              '(desconto) ${cupom.itens[i].linhaTotalDescImp}',
-              textAlign: pw.TextAlign.right,
-              style: pw.TextStyle(fontSize: impressaoTamanhoFonteProdutoValores, font: fontDetalhe),
-            ),
-          ],
-        ),
-      );
-    }
-
-    list.add(
-      pw.SizedBox(height: 4),
-    );
-  }
-
-  ///
-  /// Itens de pagamento
-  ///
-
-  List<pw.Widget> listPagtos = [];
-
-  for (var i = 0; i < cupom.pagtos.length; i++) {
-    int parcelas = cupom.pagtos[i].parcelas;
-    String nome = parcelas == 0 ? cupom.pagtos[i].nome : cupom.pagtos[i].nome + ' ' + parcelas.toString() + 'x';
-
-    if (impressaoTamanhoFonteTotais <= 10) {
-      listPagtos.add(pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.end,
-        children: [
-          pw.Text(
-            nome + cupom.pagtos[i].valorF.padLeft(11),
-            style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais),
-          ),
-        ],
-      ));
-    } else {
-      var v = impressaoTamanhoFonteTotais <= 14
-          ? impressaoTamanhoFonteTotais <= 14
-              ? 3
-              : 6
-          : 8;
-      listPagtos.add(pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.end,
-        children: [
-          pw.Text(
-            nome,
-            style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais - v),
-          ),
-          pw.Text(
-            cupom.pagtos[i].valorF.padLeft(11),
-            style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais),
-          ),
-        ],
-      ));
-    }
-  }
-
-  double inch = 72.0;
-  double mm = inch / 25.4;
-
-  doc.addPage(
-    pw.Page(
-      pageFormat: PdfPageFormat(double.parse(impressaoTamanhoPapel) * mm, double.infinity, marginAll: 1 * mm),
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            ///
-            /// Cancelado
-            ///
-
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                wCancelado,
-              ],
-            ),
-
-            ///
-            /// Cabeçalho
-            ///
-
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                pw.Padding(
-                  padding: const pw.EdgeInsets.only(left: 20, right: 20),
-                  child: pw.Image(netImage),
-                ),
-                pw.Divider(height: impressaoEspacamento),
-                pw.Text(aEmpresa['Nome'], style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal), textAlign: TextAlign.center),
-                pw.Text('CNPJ:${aEmpresa['CpfCnpjF']}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
-                pw.Text(aEmpresa['Logradouro'] + ' ' + aEmpresa['Numero'] + ' ' + aEmpresa['Complemento'], style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto), textAlign: TextAlign.center),
-                pw.Text(aEmpresa['Bairro'], style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
-                pw.Text(aEmpresa['Municipio'] + ' - ' + aEmpresa['UF'], style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
-                wContato,
-                wTextoAdicionalContato,
-                pw.Divider(height: impressaoEspacamento),
-                pw.Text(aEmpresa['Titulo'], style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal)),
-                pw.Text('Emissão:${aEmpresa['dataCadastroF']}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
-                pw.Text(aEmpresa['NomeOperador'], style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
-                pw.Text(aEmpresa['CargoOperador'], style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
-                pw.Divider(height: impressaoEspacamento),
-                pw.Text(cupom.qtdProdutos.toStringAsFixed(0) + ' Iten(s)', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
-                pw.Divider(height: impressaoEspacamento),
-              ],
-            ),
-
-            ///
-            /// Itens
-            ///
-
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: list,
-            ),
-
-            ///
-            /// Totais
-            ///
-
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                //pw.Divider(height: impressaoEspacamento),
-                //pw.Text('Quantidade de itens: ' + cupom.qtdProdutos.toStringAsFixed(0), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
-                pw.Divider(height: impressaoEspacamento),
-                pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
-                  pw.Text('SUB-TOTAL ${cupom.subTotalF.padLeft(10)}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
-                ]),
-                pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
-                  pw.Text('ACRÉSCIMO ${cupom.acrescimoF.padLeft(10)}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
-                ]),
-                pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
-                  pw.Text(' DESCONTO ${cupom.descontoF.padLeft(10)}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
-                ]),
-                pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
-                  pw.Text('    TOTAL ${cupom.totalF.padLeft(10)}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
-                ]),
-                //pw.Divider(height: impressaoEspacamento),
-                //pw.Text('Formas de pagamento', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
-                //pw.Divider(height: impressaoEspacamento),
-              ],
-            ),
-
-            ///
-            /// Formas de pagamentos
-            ///
-
-            pw.SizedBox(height: 3),
-
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: listPagtos,
-            ),
-
-            pw.SizedBox(height: 3),
-
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.end,
-                  children: [
-                    cupom.tipoMovimento == '2'
-                        ? pw.SizedBox()
-                        : pw.Text(
-                            '     TROCO ${cupom.trocoF.padLeft(10)}',
-                            style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais),
-                          ),
-                  ],
-                ),
-              ],
-            ),
-
-            ///
-            /// Troco / Consumidor
-            ///
-
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Divider(height: impressaoEspacamento),
-                wAtendimento,
-                wPedido,
-                wCliente,
-                wFiscal,
-                wRodape,
-              ],
-            ),
-
-            ///
-            /// Cancelado
-            ///
-
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                wCancelado,
-              ],
-            ),
-
-            ///
-            /// Fim
-            ///
-          ],
-        ); // Center
-      },
-    ),
-  ); // Page
-
-  if (modo == 'imprimir') {
-    try {
-      await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => doc.save(),
-        format: impressaoTamanhoPapel == '58' ? PdfPageFormat.roll57 : PdfPageFormat.roll80,
-        name: 'FACILE',
-      ).then((value) => () {
-            Navigator.pop(context);
-          });
-    } catch (e) {
-      //facilePrintErro(context);
-    }
-  } else if (modo == 'share') {
-    await facileSharePdf(await doc.save(), subdominio, 'CUPOM', '');
-  } else {
-    Navigator.push(
-      context,
-      CupertinoPageRoute(
-        builder: (context) => PdfPreview(
-          allowPrinting: false,
-          allowSharing: false,
-          dpi: 300,
-          canDebug: false,
-          canChangeOrientation: false,
-          canChangePageFormat: false,
-          build: (PdfPageFormat format) => doc.save(),
-        ),
-      ),
-    );
   }
 }
 

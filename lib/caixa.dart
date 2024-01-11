@@ -23,6 +23,7 @@ import 'dados/cadastrounico.dart';
 import 'dados/funcionario.dart';
 import 'dados/produto.dart';
 import 'dados/produtovariacao.dart';
+import 'imprimecupom.dart';
 import 'lecliente.dart';
 import 'levalor.dart';
 import 'main.dart';
@@ -55,7 +56,6 @@ class _CaixaPageState extends State<CaixaPage> {
   var vendaPorAtacado = 'N';
 
   late List<Funcionario> listVendedores = List.empty();
-
   late CadastroUnico registroCliente;
   late LeClienteModo modoCliente;
 
@@ -153,40 +153,7 @@ class _CaixaPageState extends State<CaixaPage> {
       icon: CupertinoIcons.trash,
       caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Scanner', 'F4'),
       onTap: () {
-        if (_cupom.itens.isEmpty) {
-          return;
-        }
-
-        var x = painelDeExpansaoPreco;
-        setState(() {
-          painelDeExpansaoPreco = false;
-        });
-
-        Timer(Duration(milliseconds: x ? 499 : 0), () {
-          if (gParametros.vendaPedirPermissaoLimparCupom == 'S') {
-            showCupertinoModalBottomSheet(
-              backgroundColor: FacileTheme.getShadowColor(context),
-              duration: getCupertinoModalBottomSheetDuration(),
-              context: context,
-              builder: (context) => const AutorizaPage(title: 'LIMPAR CUPOM'),
-            ).then(
-              (value) {
-                if (value != null && value == 'ok') {
-                  setState(() {
-                    _cupom.limpa();
-                  });
-                }
-              },
-            );
-          } else {
-            showSimNao(context, 'LIMPAR CUPOM ?', '', () async {
-              Navigator.pop(context);
-              setState(() {
-                _cupom.limpa();
-              });
-            });
-          }
-        });
+        limparCupom(context);
       },
     ));
 
@@ -274,7 +241,14 @@ class _CaixaPageState extends State<CaixaPage> {
                               InkWell(
                                 onTap: () {
                                   if (_cupom.idCliente == '0' || registroCliente.nome.isEmpty || registroCliente.nome == 'Sem nome') {
-                                    facileSnackBarError(context, 'Ops!', 'Informar cliente para prosseguir!');
+                                    snackBarMsg(context, 'Informar cliente!', dur: 1000);
+                                    setState(() {
+                                      painelDeExpansaoPreco = false;
+                                    });
+                                    Timer(const Duration(milliseconds: 1000), () {
+                                      menuInformarCliente(context);
+                                    });
+
                                     return;
                                   }
 
@@ -322,6 +296,36 @@ class _CaixaPageState extends State<CaixaPage> {
                       ],
                     ),
                   ),
+
+            ///
+            /// Menu down
+            ///
+
+            painelDeExpansaoPreco
+                ? const SizedBox()
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButtonEx(
+                            caption: '',
+                            icon: const Icon(
+                              Icons.menu,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.all(0),
+                              backgroundColor: FacileTheme.getColorButton(context),
+                            ),
+                            onPressed: () {
+                              menuPrincipal(context);
+                            },
+                          ).animate(onPlay: (controller) => controller.repeat()).shake(delay: 1400.ms, duration: 1000.ms),
+                        ],
+                      )
+                    ],
+                  )
           ],
         ),
       )
@@ -1796,9 +1800,12 @@ class _CaixaPageState extends State<CaixaPage> {
     ).then(
       (value) {
         if (value != null && value.action == 'okClick') {
-          setState(() {
-            _cupom.idCliente = registro.id;
-            _cupom.nomeCliente = registro.nome;
+          Timer(const Duration(milliseconds: 1000), () {
+            setState(() {
+              painelDeExpansaoPreco = true;
+              _cupom.idCliente = registro.id;
+              _cupom.nomeCliente = registro.nome;
+            });
           });
         }
       },
@@ -1922,7 +1929,7 @@ class _CaixaPageState extends State<CaixaPage> {
       'idFuncionarioComissionado': _cupom.idFuncionarioComissionado,
       'idCliente': _cupom.idCliente,
       'itens': jItens,
-      'cpfCnpj': registroCliente.cpfCnpj,
+      'cpfCnpj': registroCliente.cpfCnpj.isNotEmpty && registroCliente.cpfCnpj.substring(0, 3) == '000' ? '' : registroCliente.cpfCnpj,
       'celular': registroCliente.celular,
     };
 
@@ -1939,23 +1946,191 @@ class _CaixaPageState extends State<CaixaPage> {
 
     if (aResult == null) {
     } else if (aResult != null && aResult['Status'] == 'OK') {
-      facileSnackBarSucess(context, 'Show!', aResult['Msg']);
       imprime(context);
-      setState(() {
-        painelDeExpansaoPreco = false;
-        _cupom.limpa();
-      });
+      // setState(() {
+      //   painelDeExpansaoPreco = false;
+      //   _cupom.limpa();6
+      // });
     } else {
       facileSnackBarError(context, 'Ops!', aResult['Msg']);
     }
   }
 
-  void imprime(context) {}
+  void imprime(context) {
+    showCupertinoModalBottomSheet(
+      backgroundColor: FacileTheme.getShadowColor(context),
+      duration: getCupertinoModalBottomSheetDuration(),
+      context: context,
+      builder: (context) => ImprimeCupomPage(title: 'PEDIDO ENVIADO COM SUCESSO !', cupom: _cupom),
+    ).then(
+      (value) {
+        if (value != null && value == 'ok') {}
+      },
+    );
+  }
+
+  void menuPrincipal(context) {
+    if (_cupom.itens.isEmpty) {
+      return;
+    }
+
+    final action = CupertinoActionSheet(
+      title: FacileTheme.headlineSmall(context, 'MENU'),
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            limparCupom(context);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                CupertinoIcons.trash,
+                color: FacileTheme.getColorHard(context),
+              ),
+              FacileTheme.displaySmall(context, "LIMPAR CUPOM"),
+            ],
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            setState(() {
+              painelDeExpansaoPreco = false;
+            });
+            scanCodigoBarrasEanFornecedor(context);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                CupertinoIcons.barcode,
+                color: FacileTheme.getColorHard(context),
+              ),
+              FacileTheme.displaySmall(context, "SCANNER PRODUTO"),
+            ],
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            menuDescontoGeral(context);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.percent_outlined,
+                color: FacileTheme.getColorHard(context),
+              ),
+              FacileTheme.displaySmall(context, "MENU DESCONTO GERAL NO CUPOM"),
+            ],
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            menuInformarCliente(context);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add_reaction_outlined,
+                color: FacileTheme.getColorHard(context),
+              ),
+              FacileTheme.displaySmall(context, "MENU INFORMAR CLIENTE"),
+            ],
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.payment_outlined,
+                color: FacileTheme.getColorHard(context),
+              ),
+              FacileTheme.displaySmall(context, "INFORMAR PAGAMENTO"),
+            ],
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            pesquisar(context);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                CupertinoIcons.search,
+                color: FacileTheme.getColorHard(context),
+              ),
+              FacileTheme.displaySmall(context, "PESQUISAR PRODUTOS"),
+            ],
+          ),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: FacileTheme.displaySmall(context, 'CANCELA'),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+
+    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
+  }
+
+  void limparCupom(context) {
+    if (_cupom.itens.isEmpty) {
+      return;
+    }
+
+    var x = painelDeExpansaoPreco;
+    setState(() {
+      painelDeExpansaoPreco = false;
+    });
+
+    Timer(Duration(milliseconds: x ? 499 : 0), () {
+      if (gParametros.vendaPedirPermissaoLimparCupom == 'S') {
+        showCupertinoModalBottomSheet(
+          backgroundColor: FacileTheme.getShadowColor(context),
+          duration: getCupertinoModalBottomSheetDuration(),
+          context: context,
+          builder: (context) => const AutorizaPage(title: 'LIMPAR CUPOM'),
+        ).then(
+          (value) {
+            if (value != null && value == 'ok') {
+              setState(() {
+                _cupom.limpa();
+              });
+            }
+          },
+        );
+      } else {
+        showSimNao(context, 'LIMPAR CUPOM ?', '', () async {
+          Navigator.pop(context);
+          setState(() {
+            _cupom.limpa();
+          });
+        });
+      }
+    });
+  }
 
   ///
   /// Fim
-  ///
-  ///
-  ///
   ///
 }

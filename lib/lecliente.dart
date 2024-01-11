@@ -396,7 +396,7 @@ class _EditaClientePageState extends State<EditaClientePage> {
 
     if (aResult == null) {
     } else if (aResult != null && aResult['Status'] == 'OK') {
-      snackBarMsg(context, aResult['Msg']);
+      snackBarMsg(context, aResult['Msg'], dur: 1000);
       Navigator.pop(context, PopReturns('okClick', ''));
     } else {
       facileSnackBarError(context, 'Ops!', aResult['Msg']);
