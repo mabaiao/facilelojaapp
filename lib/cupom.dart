@@ -33,7 +33,7 @@ enum CupomStatus {
 }
 
 class Cupom {
-  String id = '0';
+  String idVenda = '0';
   String idLojaFisica;
   String idEmpresa;
   String idFuncionario;
@@ -81,6 +81,9 @@ class Cupom {
   double aPagar = 0;
   String aPagarF = '-';
 
+  String idSugestaoMeioPagamento = '0';
+  String nomeSugestaoMeioPagamento = '';
+
   late List<CupomItem> itens = [];
   late List<CupomPagto> pagtos = [];
 
@@ -110,7 +113,7 @@ class Cupom {
   }
 
   void _limpa() {
-    id = '0';
+    idVenda = '0';
     idPai = '0';
     idFuncionarioComissionado = '0';
     primeiroNomeComissionado = '';
@@ -152,6 +155,9 @@ class Cupom {
 
     devolucao = 0;
     devolucaoF = '-';
+
+    idSugestaoMeioPagamento = '0';
+    nomeSugestaoMeioPagamento = '';
 
     itens.clear();
     pagtos.clear();
@@ -196,6 +202,7 @@ class Cupom {
     if (d <= 100.00) {
       for (var i = 0; i < itens.length; i++) {
         itens[i].vDesc = (itens[i].vSubTotal * d) / 100;
+        itens[i].vDesc = double.parse(itens[i].vDesc.toStringAsFixed(2));
       }
 
       recalcula();
@@ -207,6 +214,7 @@ class Cupom {
 
     if (d <= 100.00) {
       itens[index].vDesc = (itens[index].vSubTotal * d) / 100;
+      itens[index].vDesc = double.parse(itens[index].vDesc.toStringAsFixed(2));
       recalcula();
       itens[index].daVez = true;
     }
@@ -481,6 +489,8 @@ class Cupom {
     final impressaoTelefonePadrao = opcoesImpressao['_impressaoTelefonePadrao'];
     final String impressaoTelefoneCelular = opcoesImpressao['_impressaoTelefoneCelular'].toString();
     final String impressaoTelefoneFixo = opcoesImpressao['_impressaoTelefoneFixo'].toString();
+
+//    showLoading(context);
 
     ///
     /// Parte fiscal
@@ -926,7 +936,7 @@ class Cupom {
       } catch (e) {
         //facilePrintErro(context);
       }
-    } else if (modo == 'share') {
+    } else if (modo == 'compartilhar') {
       await facileSharePdf(await doc.save(), subdominio, 'CUPOM', '');
     } else {
       Navigator.push(

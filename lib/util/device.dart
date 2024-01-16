@@ -35,8 +35,10 @@ class FacileDevice {
     isWeb = false;
     host = '';
 
-    BeepPlayer.load(_beepFile);
-    BeepPlayer.load(_beepFileErr);
+    if (!Platform.isWindows) {
+      BeepPlayer.load(_beepFile);
+      BeepPlayer.load(_beepFileErr);
+    }
 
     try {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -114,10 +116,14 @@ class FacileDevice {
   }
 
   void beep() {
-    BeepPlayer.play(_beepFile);
+    if (!Platform.isWindows) {
+      BeepPlayer.play(_beepFile);
+    }
   }
 
   void beepErr() {
-    BeepPlayer.play(_beepFileErr);
+    if (!Platform.isWindows) {
+      BeepPlayer.play(_beepFileErr);
+    }
   }
 }

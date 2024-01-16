@@ -44,7 +44,12 @@ double getMaxSizedBoxHeight(context) {
 }
 
 double getMaxSizedBoxLottieHeight(context) {
-  double v = MediaQuery.of(context).size.height * (gDevice.isWindows || gDevice.isTabletLandscape ? 0.6 : 0.25);
+  double v = MediaQuery.of(context).size.height *
+      (gDevice.isWindows || gDevice.isTabletLandscape
+          ? 0.6
+          : gDevice.isPhoneSmall
+              ? 0.25
+              : 0.30);
 
   if (gDevice.isTabletPortrait) {
     v = MediaQuery.of(context).size.height * 0.3;
@@ -322,7 +327,7 @@ showAlertSuccess(
   });
 }
 
-showLoading(BuildContext context) {
+showLoading(BuildContext context, {VoidCallback? onThen}) {
   AlertDialog alert = AlertDialog(
     contentPadding: getPaddingDefault(context),
     content: Padding(
@@ -357,7 +362,11 @@ showLoading(BuildContext context) {
     builder: (BuildContext context) {
       return alert;
     },
-  );
+  ).then((value) {
+    if (onThen != null) {
+      onThen();
+    }
+  });
 }
 
 void facileSnackBarSucess(context, caption, msg, {dur = 2000, VoidCallback? onThen}) {
@@ -445,7 +454,7 @@ void facileSnackBarError(context, caption, msg, {dur = 2000}) {
   // ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }
 
-PreferredSizeWidget? getCupertinoAppBar(context, caption, icons, {addClose = true}) {
+PreferredSizeWidget? getCupertinoAppBar(context, caption, icons, {addClose = true, isBack = false}) {
   List<Widget> actions = [];
 
   for (var fab in icons) {
@@ -473,7 +482,7 @@ PreferredSizeWidget? getCupertinoAppBar(context, caption, icons, {addClose = tru
         Navigator.pop(context);
       },
       icon: Icon(
-        Icons.expand_more_outlined,
+        isBack ? Icons.arrow_back_ios : Icons.expand_more_outlined,
         color: Theme.of(context).colorScheme.primary,
       ),
     ),
@@ -1075,29 +1084,39 @@ class FormFloatingActionButton {
 /// getFFormFloatingActionButtonList
 ///
 
-Widget getFormFloatingActionButtonList(listIn, {isLoad = false}) {
+Widget getFormFloatingActionButtonList(listIn, {isLoad = false, mainAxisAlignment = MainAxisAlignment.end, bool mini = false, bool animate = false}) {
   List<Widget> list = [];
 
   for (var fab in listIn) {
-    Widget w = FloatingActionButton.extended(
-      backgroundColor: isLoad ? Colors.grey.withOpacity(0.9) : fab.cor,
-      foregroundColor: isLoad ? Colors.white.withOpacity(0.8) : null,
-      heroTag: null,
-      label: Row(
-        children: [
-          Text(fab.caption),
-          Icon(fab.icon),
-        ],
+    Widget w = Opacity(
+      opacity: mini ? 0.8 : 0.9,
+      child: FloatingActionButton.extended(
+        backgroundColor: isLoad ? Colors.grey.withOpacity(0.9) : fab.cor,
+        foregroundColor: isLoad ? Colors.white.withOpacity(0.8) : null,
+        heroTag: null,
+        onPressed: isLoad ? () {} : fab.onTap,
+        label: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(fab.caption),
+            animate
+                ? Icon(fab.icon).animate(onPlay: (controller) => controller.repeat()).shake(
+                      delay: 1400.ms,
+                      duration: 1000.ms,
+                    )
+                : Icon(fab.icon),
+          ],
+        ),
       ),
-      onPressed: isLoad ? () {} : fab.onTap,
     );
-    list.add(w);
+    //if (mini) {
+    list.add(facileDelayedDisplayBatendo(w));
     list.add(const SizedBox(
       width: 5,
     ));
   }
   return Row(
-    mainAxisAlignment: MainAxisAlignment.end,
+    mainAxisAlignment: mainAxisAlignment,
     children: list,
   );
 }
@@ -1296,6 +1315,17 @@ class CurrencyInputFormatter3 extends TextInputFormatter {
 ///
 ///
 
+class PopReturnsDynamic {
+  String action;
+  dynamic param;
+
+  PopReturnsDynamic(this.action, this.param);
+
+  void setParam(p) {
+    param = p;
+  }
+}
+
 class PopReturns {
   String action;
   String param;
@@ -1353,6 +1383,46 @@ Widget getLogo(context, {double proporcao = 1}) {
             ),
           ],
         ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey).then().shake(duration: 500.ms),
+      ),
+    ),
+  );
+}
+
+Widget getSlogan(context, {double proporcao = 1, String title = ''}) {
+  var gradient = LinearGradient(
+    colors: [
+      Colors.yellow,
+      Colors.yellow.withOpacity(.9),
+      Colors.yellow,
+    ],
+  );
+
+  return Transform(
+    transform: Matrix4.identity()..rotateZ(-9 * 3.1415927 / 180),
+    child: DottedBorder(
+      borderType: BorderType.Rect,
+      strokeWidth: 2,
+      padding: const EdgeInsets.all(5),
+      color: (gTema.modo == 'dark' ? Colors.white : Colors.black),
+      dashPattern: const [6, 6],
+      child: Container(
+        height: 75 * proporcao,
+        width: 150 * proporcao,
+        decoration: BoxDecoration(
+          gradient: gradient,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.anton(
+                fontSize: 50 * proporcao,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -1437,4 +1507,9 @@ void compartilha(bytes, {String text = ''}) async {
 
 String getUniqueID() {
   return md5.convert(utf8.encode('${DateTime.now().millisecondsSinceEpoch}-${UniqueKey()}')).toString();
+}
+
+double truncate(double val, int places) {
+  num mod = pow(10.0, places);
+  return ((val * mod).round().toDouble() / mod);
 }

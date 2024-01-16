@@ -25,13 +25,22 @@ import 'dados/produto.dart';
 import 'dados/produtovariacao.dart';
 import 'imprimecupom.dart';
 import 'lecliente.dart';
+import 'leformapagamento.dart';
 import 'levalor.dart';
 import 'main.dart';
 import 'util.dart';
 import 'utiltema.dart';
 
+enum CaixaModo {
+  pedidoLoja,
+  pedidoZap,
+  venda,
+}
+
 class CaixaPage extends StatefulWidget {
-  const CaixaPage({super.key});
+  final CaixaModo modo;
+
+  const CaixaPage({super.key, required this.modo});
 
   @override
   State<CaixaPage> createState() => _CaixaPageState();
@@ -68,7 +77,7 @@ class _CaixaPageState extends State<CaixaPage> {
       idLojaFisica: gUsuario.idLojaFisica,
       idEmpresa: gUsuario.idEmpresa,
       idFuncionario: gUsuario.idFuncionario,
-      tipoMovimento: (gUsuario.siglaCargo == 'ope' ? CupomTipoMovimento.pedido.index.toString() : CupomTipoMovimento.venda.index.toString()),
+      tipoMovimento: (gUsuario.siglaCargo == 'ven' ? CupomTipoMovimento.pedido.index.toString() : CupomTipoMovimento.venda.index.toString()),
       host: gUsuario.host,
     );
 
@@ -148,6 +157,24 @@ class _CaixaPageState extends State<CaixaPage> {
   @override
   Widget build(BuildContext context) {
     List<FormIconButton> listIconButton = [];
+    List<FormFloatingActionButton> listFloatingActionButton = [];
+
+    if (!painelDeExpansaoPreco) {
+      listFloatingActionButton.add(FormFloatingActionButton(
+        icon: Icons.menu,
+        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'MENU', 'F2'),
+        onTap: () {
+          var x = painelDeExpansaoPreco;
+          setState(() {
+            painelDeExpansaoPreco = false;
+          });
+
+          Timer(Duration(milliseconds: x ? 499 : 0), () {
+            menuPrincipal(context);
+          });
+        },
+      ));
+    }
 
     listIconButton.add(FormIconButton(
       icon: CupertinoIcons.trash,
@@ -176,7 +203,7 @@ class _CaixaPageState extends State<CaixaPage> {
       },
     ));
 
-    if (gUsuario.siglaCargo != 'ope') {
+    if (gUsuario.siglaCargo != 'ven' && widget.modo == CaixaModo.venda) {
       listIconButton.add(FormIconButton(
         icon: Icons.person_2_outlined,
         caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Atendimento', 'F9'),
@@ -194,7 +221,15 @@ class _CaixaPageState extends State<CaixaPage> {
       },
     ));
 
-    if (gUsuario.siglaCargo == 'ope') {
+    listIconButton.add(FormIconButton(
+      icon: Icons.credit_card,
+      caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Atendimento', 'F9'),
+      onTap: () {
+        informarMeioPagamento(context);
+      },
+    ));
+
+    if (gUsuario.siglaCargo == 'ven') {
       _cupom.idFuncionarioComissionado = gUsuario.idFuncionario;
       _cupom.primeiroNomeComissionado = gUsuario.nome;
     }
@@ -220,9 +255,70 @@ class _CaixaPageState extends State<CaixaPage> {
         child: Stack(
           children: [
             getCupomItens(context),
+            getMeioPagamento(context),
             getCliente(context),
             getAtendimento(context),
             getFooter(context),
+            !painelDeExpansaoPreco && _cupom.itens.isNotEmpty
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 40, right: 15),
+                            child: getSlogan(context,
+                                proporcao: 0.3,
+                                title: (widget.modo == CaixaModo.venda
+                                    ? 'CAIXA'
+                                    : widget.modo == CaixaModo.pedidoLoja
+                                        ? 'LOJA'
+                                        : 'ZAP')),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : const SizedBox(),
+
+            ///
+            /// Info de quantidade
+            ///
+
+            _cupom.itens.isEmpty
+                ? const SizedBox()
+                : Opacity(
+                    opacity: 1,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: gDevice.isTabletAll ? 60 : 30,
+                              height: gDevice.isTabletAll ? 60 : 30,
+                              decoration: const BoxDecoration(
+                                color: Colors.yellow,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _cupom.qtdProdutos.toStringAsFixed(0),
+                                  style: GoogleFonts.anton(
+                                    fontWeight: Theme.of(context).textTheme.headlineMedium?.fontWeight,
+                                    fontSize: Theme.of(context).textTheme.headlineMedium?.fontSize,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
 
             ///
             /// Botao pagar
@@ -240,13 +336,49 @@ class _CaixaPageState extends State<CaixaPage> {
                             children: [
                               InkWell(
                                 onTap: () {
-                                  if (_cupom.idCliente == '0' || registroCliente.nome.isEmpty || registroCliente.nome == 'Sem nome') {
+                                  ///
+                                  /// Verifica obrigacao de informar cliente
+                                  ///
+
+                                  if (widget.modo != CaixaModo.venda && (_cupom.idCliente == '0' || registroCliente.nome.isEmpty || registroCliente.nome == 'Sem nome')) {
                                     snackBarMsg(context, 'Informar cliente!', dur: 1000);
                                     setState(() {
                                       painelDeExpansaoPreco = false;
                                     });
                                     Timer(const Duration(milliseconds: 1000), () {
                                       menuInformarCliente(context);
+                                    });
+
+                                    return;
+                                  }
+
+                                  ///
+                                  /// Verifica obrigacao de informar sugestao de pagamento, somente pedido loja
+                                  ///
+
+                                  if (widget.modo == CaixaModo.pedidoLoja && _cupom.idSugestaoMeioPagamento == '0') {
+                                    snackBarMsg(context, 'Informar meio de pagamento!', dur: 1000);
+                                    setState(() {
+                                      painelDeExpansaoPreco = false;
+                                    });
+                                    Timer(const Duration(milliseconds: 1000), () {
+                                      informarMeioPagamento(context);
+                                    });
+
+                                    return;
+                                  }
+
+                                  ///
+                                  /// Verifica obrigacao de fazer o pagamento para
+                                  ///
+
+                                  if (widget.modo == CaixaModo.venda && _cupom.pagtos.isEmpty) {
+                                    snackBarMsg(context, 'Informar pagamento!', dur: 1000);
+                                    setState(() {
+                                      painelDeExpansaoPreco = false;
+                                    });
+                                    Timer(const Duration(milliseconds: 1000), () {
+                                      //informarMeioPagamento(context);
                                     });
 
                                     return;
@@ -271,19 +403,15 @@ class _CaixaPageState extends State<CaixaPage> {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Icon(
-                                            (gUsuario.siglaCargo == 'ope' ? Icons.send : Icons.point_of_sale_outlined),
+                                            (gUsuario.siglaCargo == 'ven' ? Icons.send : Icons.point_of_sale_outlined),
                                             size: gDevice.isTabletAll ? 80 : 40,
                                             color: Colors.white,
                                           ),
                                           FacileTheme.headlineMedium(
                                             context,
-                                            (gUsuario.siglaCargo == 'ope' ? 'ENVIAR' : 'PAGAR'),
+                                            (gUsuario.siglaCargo == 'ven' ? 'ENVIAR' : 'PAGAR'),
                                             invert: true,
                                           ),
-                                          // Text(
-                                          //   (gUsuario.siglaCargo == 'ope' ? 'ENVIAR' : 'PAGAR'),
-                                          //   style: const TextStyle(color: Colors.white),
-                                          // ),
                                         ],
                                       ),
                                     ),
@@ -301,31 +429,31 @@ class _CaixaPageState extends State<CaixaPage> {
             /// Menu down
             ///
 
-            painelDeExpansaoPreco
-                ? const SizedBox()
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButtonEx(
-                            caption: '',
-                            icon: const Icon(
-                              Icons.menu,
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.all(0),
-                              backgroundColor: FacileTheme.getColorButton(context),
-                            ),
-                            onPressed: () {
-                              menuPrincipal(context);
-                            },
-                          ).animate(onPlay: (controller) => controller.repeat()).shake(delay: 1400.ms, duration: 1000.ms),
-                        ],
-                      )
-                    ],
-                  )
+            // painelDeExpansaoPreco
+            //     ? const SizedBox()
+            //     : Column(
+            //         mainAxisAlignment: MainAxisAlignment.end,
+            //         children: [
+            //           Row(
+            //             mainAxisAlignment: MainAxisAlignment.center,
+            //             children: [
+            //               ElevatedButtonEx(
+            //                 caption: '',
+            //                 icon: const Icon(
+            //                   Icons.menu,
+            //                 ),
+            //                 style: ElevatedButton.styleFrom(
+            //                   padding: EdgeInsets.all(gDevice.isTabletAll ? 28 : 0),
+            //                   backgroundColor: FacileTheme.getColorButton(context),
+            //                 ),
+            //                 onPressed: () {
+            //                   menuPrincipal(context);
+            //                 },
+            //               ).animate(onPlay: (controller) => controller.repeat()).shake(delay: 1400.ms, duration: 1000.ms),
+            //             ],
+            //           )
+            //         ],
+            //       )
           ],
         ),
       )
@@ -343,12 +471,17 @@ class _CaixaPageState extends State<CaixaPage> {
         },
         child: SafeArea(
           child: Scaffold(
-            floatingActionButton: getFormFloatingActionButtonList([]),
+            floatingActionButton: getFormFloatingActionButtonList(
+              _cupom.itens.isNotEmpty ? listFloatingActionButton : [],
+              mainAxisAlignment: MainAxisAlignment.center,
+              mini: gDevice.isPhoneSmall ? true : false,
+              animate: true,
+            ),
             appBar: gDevice.isWindows
                 ? null
                 : getCupertinoAppBarCheck(
                     context,
-                    '${gDevice.isTabletAll ? 'Itens ' : ''}(${_cupom.qtdProdutos.toStringAsFixed(0)})',
+                    '', //'${gDevice.isTabletAll ? 'Itens ' : ''}(${_cupom.qtdProdutos.toStringAsFixed(0)})',
                     listIconButton,
                     false,
                     addCheck: false,
@@ -384,8 +517,9 @@ class _CaixaPageState extends State<CaixaPage> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Container(
-                    width: getMaxSizedBoxWidth(context) * (gDevice.isTabletAll ? 0.8 : 0.8),
-                    padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 2 : 1),
+                    width: getMaxSizedBoxWidth(context) * 0.7,
+                    height: (gDevice.isTabletAll ? 80 : 40),
+                    //padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 2 : 1),
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.only(
                         topRight: Radius.circular(30),
@@ -395,16 +529,80 @@ class _CaixaPageState extends State<CaixaPage> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.assignment_ind_outlined),
-                        Text(
-                          _cupom.primeiroNomeComissionado,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        gUsuario.imagem.isEmpty
+                            ? const SizedBox()
+                            : SizedBox(
+                                width: (gDevice.isTabletAll ? 50 : 25),
+                                height: (gDevice.isTabletAll ? 50 : 25),
+                                child: ClipOval(
+                                  child: SizedBox.fromSize(
+                                    size: Size.fromRadius(
+                                      getMaxSizedImagemProfile(context),
+                                    ),
+                                    child: Image.network(
+                                      gUsuario.imagem,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                        FacileTheme.displayMedium(context, _cupom.primeiroNomeComissionado),
                       ],
                     ),
                   ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.black54),
                 ],
               ),
+            ],
+          );
+  }
+
+  Widget getMeioPagamento(context) {
+    var gradient = LinearGradient(
+      colors: [
+        (gTema.modo == 'dark' ? Colors.grey.withOpacity(0.5) : Colors.grey.withOpacity(0.5)),
+        (gTema.modo == 'dark' ? Colors.grey.withOpacity(0.5) : Colors.grey.withOpacity(0.5)),
+        (gTema.modo == 'dark' ? Colors.grey.withOpacity(0.5) : Colors.grey.withOpacity(0.5)),
+        (gTema.modo == 'dark' ? Colors.grey.withOpacity(0.5) : Colors.grey.withOpacity(0.5)),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    );
+
+    return _cupom.idSugestaoMeioPagamento == '0'
+        ? const SizedBox()
+        : Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      painelDeExpansaoPreco = false;
+                      informarMeioPagamento(context);
+                    },
+                    child: Container(
+                      width: getMaxSizedBoxWidth(context) * 0.7,
+                      height: (gDevice.isTabletAll ? 80 : 40),
+                      //padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 2 : 1),
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                        gradient: gradient,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(getIcon(_cupom.idSugestaoMeioPagamento), size: gDevice.isTabletAll ? 32 : 24),
+                          FacileTheme.displayMedium(context, _cupom.nomeSugestaoMeioPagamento.toUpperCase()),
+                        ],
+                      ),
+                    ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.black54),
+                  ),
+                ],
+              ),
+              SizedBox(height: ((gDevice.isTabletAll ? 80 : 40) + 2) * 2)
             ],
           );
   }
@@ -431,6 +629,7 @@ class _CaixaPageState extends State<CaixaPage> {
                 children: [
                   InkWell(
                     onTap: () {
+                      painelDeExpansaoPreco = false;
                       editaCliente(
                         context,
                         modoCliente,
@@ -439,7 +638,8 @@ class _CaixaPageState extends State<CaixaPage> {
                     },
                     child: Container(
                       width: getMaxSizedBoxWidth(context) * (gDevice.isTabletAll ? 0.8 : 0.9),
-                      padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 2 : 1),
+                      height: (gDevice.isTabletAll ? 80 : 40),
+                      //padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 2 : 1),
                       decoration: BoxDecoration(
                         borderRadius: const BorderRadius.only(
                           topRight: Radius.circular(30),
@@ -449,18 +649,15 @@ class _CaixaPageState extends State<CaixaPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.emoji_emotions_outlined),
-                          Text(
-                            '${_cupom.nomeCliente} - ${(modoCliente.index == LeClienteModo.celular.index ? registroCliente.celular : registroCliente.cpfCnpjF)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          Icon(Icons.emoji_emotions_outlined, size: gDevice.isTabletAll ? 32 : 24),
+                          FacileTheme.displayMedium(context, '${_cupom.nomeCliente} - ${(modoCliente.index == LeClienteModo.celular.index ? registroCliente.celular : registroCliente.cpfCnpjF)}'),
                         ],
                       ),
                     ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 200.ms, duration: 4000.ms, color: Colors.black54),
                   ),
                 ],
               ),
-              SizedBox(height: (42 * (gDevice.isTabletAll ? 1.4 : 1)))
+              SizedBox(height: (gDevice.isTabletAll ? 80 : 40) + 2)
             ],
           );
   }
@@ -479,6 +676,10 @@ class _CaixaPageState extends State<CaixaPage> {
               children: [
                 Stack(
                   children: [
+                    ///
+                    /// Paindel de resumo
+                    ///
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -651,420 +852,423 @@ class _CaixaPageState extends State<CaixaPage> {
     negritoFonte = gParametros.aparenciaPadraoExibicaoNomeProdutoFonteNegrito == 'S';
 
     if (_cupom.itens.isNotEmpty) {
-      return ListView.builder(
-        padding: const EdgeInsets.only(bottom: 100),
-        controller: controllerList,
-        itemCount: _cupom.itens.length,
-        itemBuilder: (context, index) => Dismissible(
-          key: UniqueKey(),
-          direction: DismissDirection.endToStart,
-          background: Container(
-            color: FacileTheme.getColorButton(context),
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const Icon(Icons.navigate_before),
-                  const Icon(Icons.navigate_before),
-                  const Icon(Icons.navigate_before),
-                  FacileTheme.displayMedium(context, 'REMOVER'),
-                ],
-              ),
-            ),
-          ),
-          //onDismissed: (_) {
-          confirmDismiss: (DismissDirection direction) async {
-            return await removeItem(context, index);
-          },
-
-          ///
-          /// Item produto da lista
-          ///
-          child: Container(
-            height: gDevice.isTabletAll ? 170 : 130,
-            margin: EdgeInsets.only(
-              left: 8,
-              top: gDevice.isTabletAll ? 5 : 10,
-              right: 8,
-            ),
-            padding: const EdgeInsets.all(4.0),
-            decoration: BoxDecoration(
-              border: _cupom.itens[index].daVez
-                  ? Border.all(
-                      color: FacileTheme.getColorHard(context),
-                      width: 2,
-                    )
-                  : Border.all(
-                      color: Colors.grey.shade300,
-                      width: 2,
-                    ),
-              borderRadius: const BorderRadius.all(
-                Radius.circular(10),
-              ),
-              color: Theme.of(context).colorScheme.background,
-            ),
-            child: InkWell(
-              onTap: () {
-                final action = CupertinoActionSheet(
-                  title: FacileTheme.headlineSmall(context, 'ITEM ${index + 1} DO CUPOM'),
-                  actions: <Widget>[
-                    CupertinoActionSheetAction(
-                      isDefaultAction: true,
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        descontoPercentualCupom(context, index: index);
-                      },
-                      child: FacileTheme.displaySmall(context, "DESCONTO PERCENTUAL"),
-                    ),
-                    CupertinoActionSheetAction(
-                      isDefaultAction: true,
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        descontoFixoCupom(context, index: index);
-                      },
-                      child: FacileTheme.displaySmall(context, "DESCONTO FIXO"),
-                    ),
-                    CupertinoActionSheetAction(
-                      isDefaultAction: true,
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        setState(() {
-                          _cupom.descontoFixoItem('0', index);
-                          snackBarMsg(context, 'Desconto removido !');
-                        });
-                      },
-                      child: FacileTheme.displaySmall(context, "LIMPAR DESCONTO"),
-                    ),
-                    CupertinoActionSheetAction(
-                      isDefaultAction: true,
-                      onPressed: () async {
-                        Navigator.pop(context);
-
-                        aplicaRemove() {
-                          setState(() {
-                            if (_cupom.remove(index)) {
-                              _cupom.limpa();
-                            }
-                          });
-                        }
-
-                        if (gParametros.vendaPedirPermissaoRemoverItem == 'S') {
-                          showCupertinoModalBottomSheet(
-                            backgroundColor: FacileTheme.getShadowColor(context),
-                            duration: getCupertinoModalBottomSheetDuration(),
-                            context: context,
-                            builder: (context) => const AutorizaPage(title: 'REMOVER ITEM'),
-                          ).then(
-                            (value) {
-                              if (value != null && value == 'ok') {
-                                aplicaRemove();
-                              } else {
-                                setState(() {});
-                              }
-                            },
-                          );
-                        } else {
-                          showSimNao(context, 'REMOVER ITEM ?', '', () async {
-                            Navigator.pop(context);
-                            aplicaRemove();
-                          });
-                        }
-                      },
-                      child: FacileTheme.displaySmall(context, "REMOVER ESTE ITEM DO CUPOM"),
-                    ),
-                    // CupertinoActionSheetAction(
-                    //   isDefaultAction: true,
-                    //   onPressed: () async {
-                    //     Navigator.pop(context);
-                    //     //produtoFotos(context, _cupom.itens[index].idProduto);
-                    //     //_verDetalhe(index);
-                    //   },
-                    //   child: FacileTheme.displaySmall(context, "VER DETALHES DO PRODUTO"),
-                    // ),
+      return Opacity(
+        opacity: painelDeExpansaoPreco ? 0.4 : 1,
+        child: ListView.builder(
+          padding: const EdgeInsets.only(bottom: 200),
+          controller: controllerList,
+          itemCount: _cupom.itens.length,
+          itemBuilder: (context, index) => Dismissible(
+            key: UniqueKey(),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              color: FacileTheme.getColorButton(context),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Icon(Icons.navigate_before),
+                    const Icon(Icons.navigate_before),
+                    const Icon(Icons.navigate_before),
+                    FacileTheme.displayMedium(context, 'REMOVER'),
                   ],
-                  cancelButton: CupertinoActionSheetAction(
-                    child: FacileTheme.displaySmall(context, 'CANCELA'),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                );
+                ),
+              ),
+            ),
+            //onDismissed: (_) {
+            confirmDismiss: (DismissDirection direction) async {
+              return await removeItem(context, index);
+            },
 
-                var x = painelDeExpansaoPreco;
-                setState(() {
-                  painelDeExpansaoPreco = false;
-                });
-
-                Timer(Duration(milliseconds: x ? 499 : 0), () {
-                  showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
-                });
-              },
-              child: Stack(
-                children: [
-                  /// **************************
-                  /// Image
-                  ///
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      /// **************************
-                      /// Imagem
-                      ///
-                      SizedBox(
-                        width: gDevice.isWindows || gDevice.isTabletAll ? 160 : 90,
-                        height: gDevice.isWindows || gDevice.isTabletAll ? 160 : 90,
-                        child: _cupom.itens[index].imagemPrincipal.contains('sem-foto')
-                            ? SvgPicture.string(
-                                svgSemFoto.replaceAll(
-                                  '#B0BEC5',
-                                  gTema.colorArray[gTema.cor].toHex().replaceAll('#ff', '#'),
-                                ),
-                                height: gDevice.isWindows || gDevice.isTabletAll ? 160 : 90,
-                              )
-                            : getImageDefault(context, _cupom.itens[index].imagemPrincipal, inList: true),
+            ///
+            /// Item produto da lista
+            ///
+            child: Container(
+              height: gDevice.isTabletAll ? 170 : 130,
+              margin: EdgeInsets.only(
+                left: 8,
+                top: gDevice.isTabletAll ? 5 : 10,
+                right: 8,
+              ),
+              padding: const EdgeInsets.all(4.0),
+              decoration: BoxDecoration(
+                border: _cupom.itens[index].daVez
+                    ? Border.all(
+                        color: FacileTheme.getColorHard(context),
+                        width: 2,
+                      )
+                    : Border.all(
+                        color: Colors.grey.shade300,
+                        width: 2,
                       ),
+                borderRadius: const BorderRadius.all(
+                  Radius.circular(10),
+                ),
+                color: Theme.of(context).colorScheme.background,
+              ),
+              child: InkWell(
+                onTap: () {
+                  final action = CupertinoActionSheet(
+                    title: FacileTheme.headlineSmall(context, 'ITEM ${index + 1} DO CUPOM'),
+                    actions: <Widget>[
+                      CupertinoActionSheetAction(
+                        isDefaultAction: true,
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          descontoPercentualCupom(context, index: index);
+                        },
+                        child: FacileTheme.displaySmall(context, "DESCONTO PERCENTUAL"),
+                      ),
+                      CupertinoActionSheetAction(
+                        isDefaultAction: true,
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          descontoFixoCupom(context, index: index);
+                        },
+                        child: FacileTheme.displaySmall(context, "DESCONTO FIXO"),
+                      ),
+                      CupertinoActionSheetAction(
+                        isDefaultAction: true,
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          setState(() {
+                            _cupom.descontoFixoItem('0', index);
+                            snackBarMsg(context, 'Desconto removido !');
+                          });
+                        },
+                        child: FacileTheme.displaySmall(context, "LIMPAR DESCONTO"),
+                      ),
+                      CupertinoActionSheetAction(
+                        isDefaultAction: true,
+                        onPressed: () async {
+                          Navigator.pop(context);
 
-                      /// **************************
-                      /// EAN
-                      ///
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              FacileTheme.headlineSmall(context, _cupom.itens[index].digitado),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      _cupom.itens[index].nome,
-                                      style: GoogleFonts.ubuntuCondensed(
-                                        fontSize: (gDevice.isTabletAll || gDevice.isWindows ? 18 : 14) + tamanhoFonte,
-                                        fontWeight: negritoFonte ? FontWeight.w900 : FontWeight.w500,
+                          aplicaRemove() {
+                            setState(() {
+                              if (_cupom.remove(index)) {
+                                _cupom.limpa();
+                              }
+                            });
+                          }
+
+                          if (gParametros.vendaPedirPermissaoRemoverItem == 'S') {
+                            showCupertinoModalBottomSheet(
+                              backgroundColor: FacileTheme.getShadowColor(context),
+                              duration: getCupertinoModalBottomSheetDuration(),
+                              context: context,
+                              builder: (context) => const AutorizaPage(title: 'REMOVER ITEM'),
+                            ).then(
+                              (value) {
+                                if (value != null && value == 'ok') {
+                                  aplicaRemove();
+                                } else {
+                                  setState(() {});
+                                }
+                              },
+                            );
+                          } else {
+                            showSimNao(context, 'REMOVER ITEM ?', '', () async {
+                              Navigator.pop(context);
+                              aplicaRemove();
+                            });
+                          }
+                        },
+                        child: FacileTheme.displaySmall(context, "REMOVER ESTE ITEM DO CUPOM"),
+                      ),
+                      // CupertinoActionSheetAction(
+                      //   isDefaultAction: true,
+                      //   onPressed: () async {
+                      //     Navigator.pop(context);
+                      //     //produtoFotos(context, _cupom.itens[index].idProduto);
+                      //     //_verDetalhe(index);
+                      //   },
+                      //   child: FacileTheme.displaySmall(context, "VER DETALHES DO PRODUTO"),
+                      // ),
+                    ],
+                    cancelButton: CupertinoActionSheetAction(
+                      child: FacileTheme.displaySmall(context, 'CANCELA'),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  );
+
+                  var x = painelDeExpansaoPreco;
+                  setState(() {
+                    painelDeExpansaoPreco = false;
+                  });
+
+                  Timer(Duration(milliseconds: x ? 499 : 0), () {
+                    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
+                  });
+                },
+                child: Stack(
+                  children: [
+                    /// **************************
+                    /// Image
+                    ///
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        /// **************************
+                        /// Imagem
+                        ///
+                        SizedBox(
+                          width: gDevice.isWindows || gDevice.isTabletAll ? 160 : 90,
+                          height: gDevice.isWindows || gDevice.isTabletAll ? 160 : 90,
+                          child: _cupom.itens[index].imagemPrincipal.contains('sem-foto')
+                              ? SvgPicture.string(
+                                  svgSemFoto.replaceAll(
+                                    '#B0BEC5',
+                                    gTema.colorArray[gTema.cor].toHex().replaceAll('#ff', '#'),
+                                  ),
+                                  height: gDevice.isWindows || gDevice.isTabletAll ? 160 : 90,
+                                )
+                              : getImageDefault(context, _cupom.itens[index].imagemPrincipal, inList: true),
+                        ),
+
+                        /// **************************
+                        /// EAN
+                        ///
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                FacileTheme.headlineSmall(context, _cupom.itens[index].digitado),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _cupom.itens[index].nome,
+                                        style: GoogleFonts.ubuntuCondensed(
+                                          fontSize: (gDevice.isTabletAll || gDevice.isWindows ? 18 : 14) + tamanhoFonte,
+                                          fontWeight: negritoFonte ? FontWeight.w900 : FontWeight.w500,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  /// **************************
-                  /// Item 00x a esqueda
-                  ///
-                  Opacity(
-                    opacity: 0.8,
-                    child: Container(
-                      height: gDevice.isTabletAll ? 40 : 30,
-                      width: gDevice.isTabletAll ? 60 : 40,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          bottomRight: Radius.circular(15),
-                          topLeft: Radius.circular(15),
-                        ),
-                        border: true
-                            ? Border.all(
-                                color: FacileTheme.getColorButton(context),
-                                width: 1,
-                              )
-                            // ignore: dead_code
-                            : null,
-                        boxShadow: [
-                          BoxShadow(
-                            color: FacileTheme.getShadowColor(context),
-                            spreadRadius: 0.1,
-                            blurRadius: 12,
-                            offset: const Offset(-3, -3),
-                          ),
-                        ],
-                        gradient: LinearGradient(
-                          colors: [
-                            FacileTheme.getColorHard(context),
-                            FacileTheme.getColorHard(context),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          FacileTheme.displayMedium(
-                            context,
-                            (index + 1).toString().padLeft(3, '0'),
-                            invert: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  /// **************************
-                  /// Botoes
-                  ///
-                  Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            SizedBox(
-                              height: gDevice.isTabletAll ? 50 : 35,
-                              width: gDevice.isTabletAll ? 50 : 35,
-                              child: FittedBox(
-                                child: FloatingActionButton.extended(
-                                  heroTag: null,
-                                  onPressed: () {
-                                    setState(() {
-                                      _cupom.decrementa(index);
-                                    });
-                                  },
-                                  label: const Row(
-                                    children: <Widget>[Icon(Icons.remove)],
-                                  ),
+                                  ],
                                 ),
-                              ),
+                              ],
                             ),
-                            SizedBox(
-                              width: gDevice.isTabletAll ? 35 : 25,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  FacileTheme.displayMedium(
-                                    context,
-                                    _cupom.itens[index].qCom.round().toString(),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(
-                              height: gDevice.isTabletAll ? 50 : 35,
-                              width: gDevice.isTabletAll ? 50 : 35,
-                              child: FittedBox(
-                                child: FloatingActionButton.extended(
-                                  heroTag: null,
-                                  onPressed: () {
-                                    setState(() {
-                                      _cupom.incrementa(index);
-                                    });
-                                  },
-                                  label: const Row(
-                                    children: <Widget>[Icon(Icons.add)],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
 
-                  /// **************************
-                  /// Valores
-                  ///
-                  Opacity(
-                    opacity: .8,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 2),
-                          child: Row(
+                    /// **************************
+                    /// Item 00x a esqueda
+                    ///
+                    Opacity(
+                      opacity: 0.8,
+                      child: Container(
+                        height: gDevice.isTabletAll ? 40 : 30,
+                        width: gDevice.isTabletAll ? 60 : 40,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            bottomRight: Radius.circular(15),
+                            topLeft: Radius.circular(15),
+                          ),
+                          border: true
+                              ? Border.all(
+                                  color: FacileTheme.getColorButton(context),
+                                  width: 1,
+                                )
+                              // ignore: dead_code
+                              : null,
+                          boxShadow: [
+                            BoxShadow(
+                              color: FacileTheme.getShadowColor(context),
+                              spreadRadius: 0.1,
+                              blurRadius: 12,
+                              offset: const Offset(-3, -3),
+                            ),
+                          ],
+                          gradient: LinearGradient(
+                            colors: [
+                              FacileTheme.getColorHard(context),
+                              FacileTheme.getColorHard(context),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FacileTheme.displayMedium(
+                              context,
+                              (index + 1).toString().padLeft(3, '0'),
+                              invert: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    /// **************************
+                    /// Botoes
+                    ///
+                    Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Column(
+                        children: [
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              Stack(
-                                children: [
-                                  Container(
-                                    height: gDevice.isTabletAll ? 45 : 35,
-                                    width: gDevice.isTabletPortrait ? getMaxSizedBoxWidth(context) * 0.7 : getMaxSizedBoxWidth(context),
-                                    padding: const EdgeInsets.all(0),
-                                    decoration: BoxDecoration(
-                                      borderRadius: const BorderRadius.only(
-                                        bottomRight: Radius.circular(15),
-                                        topLeft: Radius.circular(15),
-                                      ),
-                                      border: true
-                                          ? Border.all(
-                                              color: FacileTheme.getColorButton(context),
-                                              width: 1,
-                                            )
-                                          // ignore: dead_code
-                                          : null,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: FacileTheme.getShadowColor(context),
-                                          spreadRadius: 0.1,
-                                          blurRadius: 12,
-                                          offset: const Offset(-3, -3),
-                                        ),
-                                      ],
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          FacileTheme.getColorHard(context),
-                                          FacileTheme.getColorHard(context),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        children: [
-                                          badges.Badge(
-                                            badgeContent: _cupom.itens[index].temDesconto ? Icon(Icons.attach_money, color: Colors.white, size: gDevice.isTabletAll ? 10 : 10) : const SizedBox(),
-                                            position: badges.BadgePosition.topEnd(top: -20, end: -0),
-                                            badgeColor: _cupom.itens[index].temDesconto ? Colors.red : Colors.transparent,
-                                            child: Row(
-                                              children: [
-                                                FacileTheme.displayMedium(
-                                                  context,
-                                                  _cupom.itens[index].linhaTotal,
-                                                  invert: true,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                              SizedBox(
+                                height: gDevice.isTabletAll ? 50 : 35,
+                                width: gDevice.isTabletAll ? 50 : 35,
+                                child: FittedBox(
+                                  child: FloatingActionButton.extended(
+                                    heroTag: null,
+                                    onPressed: () {
+                                      setState(() {
+                                        _cupom.decrementa(index);
+                                      });
+                                    },
+                                    label: const Row(
+                                      children: <Widget>[Icon(Icons.remove)],
                                     ),
                                   ),
-
-                                  /// **************************
-                                  /// Sigla variacao
-                                  ///
-
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 2.0, left: 4.0),
-                                    child: FacileTheme.displayMedium(
+                                ),
+                              ),
+                              SizedBox(
+                                width: gDevice.isTabletAll ? 35 : 25,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    FacileTheme.displayMedium(
                                       context,
-                                      _cupom.itens[index].unidadeSigla,
-                                      invert: true,
+                                      _cupom.itens[index].qCom.round().toString(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(
+                                height: gDevice.isTabletAll ? 50 : 35,
+                                width: gDevice.isTabletAll ? 50 : 35,
+                                child: FittedBox(
+                                  child: FloatingActionButton.extended(
+                                    heroTag: null,
+                                    onPressed: () {
+                                      setState(() {
+                                        _cupom.incrementa(index);
+                                      });
+                                    },
+                                    label: const Row(
+                                      children: <Widget>[Icon(Icons.add)],
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
-                  ///
-                  /// Fim
-                  ///
-                ],
+                    /// **************************
+                    /// Valores
+                    ///
+                    Opacity(
+                      opacity: .8,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Stack(
+                                  children: [
+                                    Container(
+                                      height: gDevice.isTabletAll ? 45 : 35,
+                                      width: gDevice.isTabletPortrait ? getMaxSizedBoxWidth(context) * 0.7 : getMaxSizedBoxWidth(context),
+                                      padding: const EdgeInsets.all(0),
+                                      decoration: BoxDecoration(
+                                        borderRadius: const BorderRadius.only(
+                                          bottomRight: Radius.circular(15),
+                                          topLeft: Radius.circular(15),
+                                        ),
+                                        border: true
+                                            ? Border.all(
+                                                color: FacileTheme.getColorButton(context),
+                                                width: 1,
+                                              )
+                                            // ignore: dead_code
+                                            : null,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: FacileTheme.getShadowColor(context),
+                                            spreadRadius: 0.1,
+                                            blurRadius: 12,
+                                            offset: const Offset(-3, -3),
+                                          ),
+                                        ],
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            FacileTheme.getColorHard(context),
+                                            FacileTheme.getColorHard(context),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(right: 8),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.end,
+                                          children: [
+                                            badges.Badge(
+                                              badgeContent: _cupom.itens[index].temDesconto ? Icon(Icons.attach_money, color: Colors.white, size: gDevice.isTabletAll ? 10 : 10) : const SizedBox(),
+                                              position: badges.BadgePosition.topEnd(top: -20, end: -0),
+                                              badgeColor: _cupom.itens[index].temDesconto ? Colors.red : Colors.transparent,
+                                              child: Row(
+                                                children: [
+                                                  FacileTheme.displayMedium(
+                                                    context,
+                                                    _cupom.itens[index].linhaTotal,
+                                                    invert: true,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                    /// **************************
+                                    /// Sigla variacao
+                                    ///
+
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2.0, left: 4.0),
+                                      child: FacileTheme.displayMedium(
+                                        context,
+                                        _cupom.itens[index].unidadeSigla,
+                                        invert: true,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    ///
+                    /// Fim
+                    ///
+                  ],
+                ),
               ),
             ),
           ),
@@ -1081,24 +1285,33 @@ class _CaixaPageState extends State<CaixaPage> {
           gDevice.isPhoneAll || gDevice.isTabletAll ? const SizedBox() : getEspacadorTriplo(),
           Icon(
             Icons.shopping_cart_outlined,
-            size: 170,
+            size: gDevice.isTabletAll ? 150 : 80,
             color: FacileTheme.getColorHard(context),
           ).animate(onPlay: (controller) => controller.repeat()).shake(delay: 1400.ms, duration: 1000.ms),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FacileTheme.headlineLarge(context, 'LIVRE').animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey),
+              FacileTheme.headlineLarge(
+                      context,
+                      widget.modo == CaixaModo.venda
+                          ? 'CAIXA LIVRE'
+                          : widget.modo == CaixaModo.pedidoLoja
+                              ? 'ATENDIMENTO LOJA'
+                              : 'ATENDIMENTO WHATSAPP')
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey),
+              //FacileTheme.headlineLarge(context, 'LIVRE').animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey),
             ],
           ),
-          FacileTheme.headlineSmall(context, gUsuario.primeiroNome),
-          FacileTheme.headlineSmall(context, 'terminal ${gUsuario.host}'),
-          FacileTheme.headlineSmall(context, 'em ${gUsuario.subdominio.toUpperCase()}'),
+          FacileTheme.headlineSmall(context, gUsuario.nomeLojaFisica).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey),
+          FacileTheme.headlineSmall(context, gUsuario.nome),
+          FacileTheme.headlineSmall(context, 'Terminal ${gUsuario.host} em ${gUsuario.subdominio.toUpperCase()}'),
 
           _cupom.itens.isNotEmpty
               ? const SizedBox()
               : AvatarGlow(
                   glowColor: FacileTheme.getColorHard(context),
-                  endRadius: 120,
+                  endRadius: gDevice.isPhoneSmall ? 90 : 120,
                   duration: const Duration(milliseconds: 1000),
                   repeat: true,
                   showTwoGlows: true,
@@ -1802,7 +2015,6 @@ class _CaixaPageState extends State<CaixaPage> {
         if (value != null && value.action == 'okClick') {
           Timer(const Duration(milliseconds: 1000), () {
             setState(() {
-              painelDeExpansaoPreco = true;
               _cupom.idCliente = registro.id;
               _cupom.nomeCliente = registro.nome;
             });
@@ -1865,17 +2077,17 @@ class _CaixaPageState extends State<CaixaPage> {
   }
 
   Future<void> emitir(context) async {
-    if (_cupom.idCliente == '0') {
-      menuInformarCliente(context);
-      return;
-    }
-
     var origem = '';
 
-    if (gUsuario.siglaCargo == 'ope') {
+    if (gUsuario.siglaCargo == 'ven') {
       _cupom.idFuncionarioComissionado = gUsuario.idFuncionario;
       _cupom.status = CupomStatus.emAberto.index.toString();
-      origem = 'appped';
+
+      if (widget.modo == CaixaModo.pedidoLoja) {
+        origem = 'appped';
+      } else {
+        origem = 'appzap';
+      }
     } else {
       _cupom.status = CupomStatus.concluido.index.toString();
       origem = 'appven';
@@ -1906,6 +2118,20 @@ class _CaixaPageState extends State<CaixaPage> {
       });
     }
 
+    var jPagtos = [];
+
+    for (var pagto in _cupom.pagtos) {
+      jPagtos.add(<String, dynamic>{
+        'hash': getUniqueID(),
+        'idMeioPagamento': pagto.idMeioPagamento,
+        'nome': pagto.nome,
+        'codigoSefaz': pagto.codigoSefaz,
+        'gerarXml': pagto.gerarXml,
+        'valor': pagto.valor,
+        'parcelas': pagto.parcelas,
+      });
+    }
+
     var jVenda = <String, dynamic>{
       'hash': getUniqueID(),
       'host': gUsuario.terminalHost,
@@ -1927,8 +2153,10 @@ class _CaixaPageState extends State<CaixaPage> {
       'aPagar': _cupom.aPagar,
       'comissaoTotal': _cupom.subTotal,
       'idFuncionarioComissionado': _cupom.idFuncionarioComissionado,
+      'idSugestaoMeioPagamento': _cupom.idSugestaoMeioPagamento,
       'idCliente': _cupom.idCliente,
       'itens': jItens,
+      'pagtos': jPagtos,
       'cpfCnpj': registroCliente.cpfCnpj.isNotEmpty && registroCliente.cpfCnpj.substring(0, 3) == '000' ? '' : registroCliente.cpfCnpj,
       'celular': registroCliente.celular,
     };
@@ -1946,6 +2174,7 @@ class _CaixaPageState extends State<CaixaPage> {
 
     if (aResult == null) {
     } else if (aResult != null && aResult['Status'] == 'OK') {
+      _cupom.idVenda = aResult['idVenda'];
       imprime(context);
       // setState(() {
       //   painelDeExpansaoPreco = false;
@@ -1961,7 +2190,7 @@ class _CaixaPageState extends State<CaixaPage> {
       backgroundColor: FacileTheme.getShadowColor(context),
       duration: getCupertinoModalBottomSheetDuration(),
       context: context,
-      builder: (context) => ImprimeCupomPage(title: 'PEDIDO ENVIADO COM SUCESSO !', cupom: _cupom),
+      builder: (context) => ImprimeCupomPage(title: 'PEDIDO ENVIADO COM SUCESSO !', idVenda: _cupom.idVenda),
     ).then(
       (value) {
         if (value != null && value == 'ok') {}
@@ -2027,7 +2256,7 @@ class _CaixaPageState extends State<CaixaPage> {
                 Icons.percent_outlined,
                 color: FacileTheme.getColorHard(context),
               ),
-              FacileTheme.displaySmall(context, "MENU DESCONTO GERAL NO CUPOM"),
+              FacileTheme.displaySmall(context, "DESCONTO GERAL NO CUPOM"),
             ],
           ),
         ),
@@ -2044,7 +2273,7 @@ class _CaixaPageState extends State<CaixaPage> {
                 Icons.add_reaction_outlined,
                 color: FacileTheme.getColorHard(context),
               ),
-              FacileTheme.displaySmall(context, "MENU INFORMAR CLIENTE"),
+              FacileTheme.displaySmall(context, "INFORMAR CLIENTE"),
             ],
           ),
         ),
@@ -2052,6 +2281,7 @@ class _CaixaPageState extends State<CaixaPage> {
           isDefaultAction: true,
           onPressed: () async {
             Navigator.pop(context);
+            informarMeioPagamento(context);
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -2060,7 +2290,7 @@ class _CaixaPageState extends State<CaixaPage> {
                 Icons.payment_outlined,
                 color: FacileTheme.getColorHard(context),
               ),
-              FacileTheme.displaySmall(context, "INFORMAR PAGAMENTO"),
+              FacileTheme.displaySmall(context, "INFORMAR MEIO DE PAGAMENTO"),
             ],
           ),
         ),
@@ -2128,6 +2358,36 @@ class _CaixaPageState extends State<CaixaPage> {
         });
       }
     });
+  }
+
+  void informarMeioPagamento(context) {
+    if (_cupom.itens.isEmpty) {
+      return;
+    }
+
+    showCupertinoModalBottomSheet(
+      backgroundColor: FacileTheme.getShadowColor(context),
+      duration: getCupertinoModalBottomSheetDuration(),
+      context: context,
+      builder: (context) => const LeFormaPagamentoPage(),
+    ).then((value) {
+      if (value != null && value.action == 'okClick') {
+        _cupom.idSugestaoMeioPagamento = value.param[0];
+        _cupom.nomeSugestaoMeioPagamento = value.param[1];
+        setState(() {});
+      } else {}
+    });
+  }
+
+  IconData getIcon(String id) {
+    if (id == '1') {
+      return Icons.money;
+    } else if (id == '2') {
+      return CupertinoIcons.qrcode;
+    } else if (int.parse(id) >= 14) {
+      return CupertinoIcons.creditcard;
+    }
+    return Icons.credit_card;
   }
 
   ///

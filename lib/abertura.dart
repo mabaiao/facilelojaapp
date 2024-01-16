@@ -173,6 +173,14 @@ class _AberturaState extends State<AberturaPage> {
         registroPage();
       } else if (s == 'F1') {
         entrarPage();
+      } else if (s == 'F2') {
+        gTema.changeColor(context);
+        Timer(const Duration(milliseconds: 200), () {
+          bg = getBackground(context);
+          setState(() {});
+        });
+      } else if (s == 'F3') {
+        gTema.changeTheme(context);
       } else if (s == 'Escape') {}
     }
   }
@@ -184,15 +192,20 @@ class _AberturaState extends State<AberturaPage> {
     listFloatingActionButton.clear();
 
     listFloatingActionButton.add(FormFloatingActionButton(
-        icon: Icons.mode_night_outlined,
-        caption: getTextWindowsKey('', ''),
-        onTap: () {
-          gTema.changeTheme(context);
-        }));
+      caption: (gUsuario.subdominio.trim().isEmpty ? getTextWindowsKey('REGISTRAR', 'F1') : getTextWindowsKey('ENTRAR', 'F1')),
+      icon: Icons.login_outlined,
+      onTap: () {
+        if (gUsuario.subdominio.trim().isEmpty) {
+          registroPage();
+        } else {
+          entrarPage();
+        }
+      },
+    ));
 
     listFloatingActionButton.add(FormFloatingActionButton(
         icon: Icons.color_lens_outlined,
-        caption: getTextWindowsKey('', ''),
+        caption: getTextWindowsKey('', 'F2'),
         onTap: () async {
           gTema.changeColor(context);
           Timer(const Duration(milliseconds: 200), () {
@@ -202,16 +215,11 @@ class _AberturaState extends State<AberturaPage> {
         }));
 
     listFloatingActionButton.add(FormFloatingActionButton(
-      caption: (gUsuario.subdominio.trim().isEmpty ? getTextWindowsKey('REGISTRAR', 'F1') : getTextWindowsKey('ENTRAR', 'F1')),
-      icon: CupertinoIcons.chevron_up,
-      onTap: () {
-        if (gUsuario.subdominio.trim().isEmpty) {
-          registroPage();
-        } else {
-          entrarPage();
-        }
-      },
-    ));
+        icon: Icons.mode_night_outlined,
+        caption: getTextWindowsKey('', 'F3'),
+        onTap: () {
+          gTema.changeTheme(context);
+        }));
 
     List<Widget> w1 = [
       getLogo(context, proporcao: gDevice.isTabletAll || gDevice.isWindows ? 1.5 : 1),

@@ -250,7 +250,7 @@ class FacileTheme {
     bool invert = false,
     disable = false,
     align = TextAlign.center,
-    fontSize = 0,
+    double fontSize = 0,
   }) {
     return Text(
       title,

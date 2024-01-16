@@ -178,6 +178,7 @@ class _RegistroState extends State<RegistroPage> {
     } else if (aResult != null && aResult['Status'] == 'OK') {
       gUsuario.subdominio = controllerApelidoValidador.text.toLowerCase();
       gUsuario.idLojaFisica = aResult['idLojaFisica'];
+      gUsuario.terminalId = aResult['terminalId'];
       gUsuario.terminalHost = aResult['terminalHost'];
       gUsuario.terminalNome = aResult['terminalNome'];
       gUsuario.host = host;

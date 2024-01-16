@@ -1,9 +1,11 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:facilelojaapp/abertura.dart';
 import 'package:facilelojaapp/util/device.dart';
 import 'package:facilelojaapp/utilparametros.dart';
 import 'package:facilelojaapp/utilpost.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -20,10 +22,13 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   //WidgetsBinding.instance.renderView.automaticSystemUiAdjustment = false;
 
-  if (gDevice.isWindows) {
-    DesktopWindow.setFullScreen(false);
-    DesktopWindow.setWindowSize(const Size(1200 * 1.52, 800 * 1.52));
-    DesktopWindow.setMinWindowSize(const Size(800, 600));
+  if (Platform.isWindows) {
+    if (kDebugMode) {
+      DesktopWindow.setWindowSize(const Size(1600 * 1.52, 1024 * 1.52));
+      DesktopWindow.setMinWindowSize(const Size(1024, 768));
+    } else {
+      DesktopWindow.setFullScreen(true);
+    }
   }
 
   runApp(const MeuApp());

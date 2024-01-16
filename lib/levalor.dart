@@ -107,7 +107,7 @@ class _LeValorState extends State<LeValorPage> {
 
     List<Widget> w2 = [
       FacileTheme.headlineLarge(context, formataModo(senha)),
-      getEspacadorDuplo(),
+      gDevice.isPhoneSmall ? const SizedBox() : getEspacadorDuplo(),
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

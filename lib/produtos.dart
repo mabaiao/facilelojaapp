@@ -198,13 +198,15 @@ class _ProdutosState extends State<ProdutosPage> {
       },
     ));
 
-    listIconButton.add(FormIconButton(
-      icon: CupertinoIcons.plus,
-      caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Novo', 'F4'),
-      onTap: () {
-        novoProduto(context);
-      },
-    ));
+    if (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'cad') {
+      listIconButton.add(FormIconButton(
+        icon: CupertinoIcons.plus,
+        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Novo', 'F4'),
+        onTap: () {
+          novoProduto(context);
+        },
+      ));
+    }
 
     List<FormFloatingActionButton> listFloatingActionButton = [];
 
@@ -227,6 +229,15 @@ class _ProdutosState extends State<ProdutosPage> {
           },
         ),
       );
+    }
+
+    if (gDevice.isWindows) {
+      listFloatingActionButton.add(FormFloatingActionButton(
+          icon: CupertinoIcons.chevron_down,
+          caption: getTextWindowsKey((gDevice.isWindows ? 'VOLTAR' : ''), 'ESC'),
+          onTap: () {
+            Navigator.pop(context);
+          }));
     }
 
     tamanhoFonte = double.parse(gParametros.aparenciaPadraoExibicaoNomeProdutoFonte);
@@ -280,6 +291,13 @@ class _ProdutosState extends State<ProdutosPage> {
                   /// Windows nao pode editar
                   ///
                   if (gDevice.isWindows) {
+                    return;
+                  }
+
+                  ///
+                  /// Somente adms e cad pode editar
+                  ///
+                  if (!(gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'cad')) {
                     return;
                   }
 
@@ -338,7 +356,7 @@ class _ProdutosState extends State<ProdutosPage> {
         child: SafeArea(
           child: Scaffold(
             floatingActionButton: getFormFloatingActionButtonList(listFloatingActionButton, isLoad: isLoad),
-            appBar: gDevice.isWindows ? null : getCupertinoAppBarCheck(context, 'PRODUTOS', listIconButton, isLoad, addCheck: false),
+            appBar: gDevice.isWindows ? null : getCupertinoAppBar(context, 'PRODUTOS', listIconButton, isBack: true),
             body: (isLoad
                 ? Center(
                     child: SizedBox(

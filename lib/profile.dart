@@ -44,6 +44,8 @@ class _ProfilePageState extends State<ProfilePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           FacileTheme.displaySmall(context, gUsuario.terminalHost),
+          const Text(' / '),
+          FacileTheme.displaySmall(context, gUsuario.terminalNome),
         ],
       ),
       getEspacadorDuplo(),

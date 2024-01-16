@@ -1,5 +1,3 @@
-import 'dart:math';
-import 'package:facilelojaapp/configuraimpressoraex.dart';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/produtos.dart';
 import 'package:facilelojaapp/profile.dart';
@@ -12,6 +10,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import 'caixa.dart';
+import 'terminalconsulta.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -43,16 +42,22 @@ class _MenuPageState extends State<MenuPage> {
     if (event.runtimeType == RawKeyDownEvent) {
       //log('AberturaPage::onFocusKey::$s');
 
-      if (s == 'Escape') {
-        Navigator.pop(context);
+      if (s == 'F2') {
+        goCaixa(context, CaixaModo.venda);
       }
-      if (s == 'F6') {
+      if (s == 'F3') {
+        menuPedido(context);
+      }
+      if (s == 'F4') {
         goProdutos(context);
       }
-      if (s == 'F10') {
+      if (s == 'F6') {
+        consultaPrecos(context);
+      }
+      if (s == 'F7') {
         gTema.changeColor(context);
       }
-      if (s == 'F11') {
+      if (s == 'F8') {
         gTema.changeTheme(context);
       }
     }
@@ -133,98 +138,127 @@ class _MenuPageState extends State<MenuPage> {
 
     List<FormIconButton> listFormIconButton = [];
 
+    if (gDevice.isAndroid && (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger')) {
+      listFormIconButton.add(
+        FormIconButton(
+          caption: getTextWindowsKey('Dash', 'F1'),
+          icon: Icons.dashboard_outlined,
+          onTap: () {},
+        ),
+      );
+    }
+
+    if (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger' || gUsuario.siglaCargo == 'ope') {
+      listFormIconButton.add(
+        FormIconButton(
+          caption: getTextWindowsKey('Caixa', 'F2'),
+          icon: Icons.point_of_sale_outlined,
+          onTap: () {
+            goCaixa(context, CaixaModo.venda);
+          },
+        ),
+      );
+    }
+
+    if (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger' || gUsuario.siglaCargo == 'ven') {
+      listFormIconButton.add(
+        FormIconButton(
+          caption: getTextWindowsKey('Pedidos', 'F3'),
+          icon: Icons.app_registration_outlined,
+          onTap: () {
+            menuPedido(context);
+          },
+        ),
+      );
+    }
+
+    // listFormIconButton.add(
+    //   FormIconButton(
+    //     caption: getTextWindowsKey('Mesas', ''),
+    //     icon: Icons.restaurant_menu_outlined,
+    //     onTap: () {},
+    //   ),
+    // );
+    // listFormIconButton.add(
+    //   FormIconButton(
+    //     caption: getTextWindowsKey('Delivery', ''),
+    //     icon: Icons.delivery_dining_outlined,
+    //     onTap: () {},
+    //   ),
+    // );
+
     listFormIconButton.add(
       FormIconButton(
-        caption: getTextWindowsKey('Dash', 'F1'),
-        icon: Icons.dashboard_outlined,
-        onTap: () {},
-      ),
-    );
-    listFormIconButton.add(
-      FormIconButton(
-        caption: getTextWindowsKey('Caixa', 'F2'),
-        icon: Icons.point_of_sale_outlined,
-        onTap: () {
-          goCaixa(context);
-        },
-      ),
-    );
-    listFormIconButton.add(
-      FormIconButton(
-        caption: getTextWindowsKey('Pedidos', 'F3'),
-        icon: Icons.app_registration_outlined,
-        onTap: () {},
-      ),
-    );
-    listFormIconButton.add(
-      FormIconButton(
-        caption: getTextWindowsKey('Mesas', 'F4'),
-        icon: Icons.restaurant_menu_outlined,
-        onTap: () {},
-      ),
-    );
-    listFormIconButton.add(
-      FormIconButton(
-        caption: getTextWindowsKey('Delivery', 'F5'),
-        icon: Icons.delivery_dining_outlined,
-        onTap: () {},
-      ),
-    );
-    listFormIconButton.add(
-      FormIconButton(
-        caption: getTextWindowsKey('Produtos', 'F6'),
+        caption: getTextWindowsKey('Produtos', 'F4'),
         icon: CupertinoIcons.barcode,
         onTap: () {
           goProdutos(context);
         },
       ),
     );
+
+    if (gDevice.isAndroid && (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger' || gUsuario.siglaCargo == 'inv')) {
+      listFormIconButton.add(
+        FormIconButton(
+          caption: getTextWindowsKey('Inventário', 'F5'),
+          icon: Icons.inventory_outlined,
+          onTap: () {},
+        ),
+      );
+    }
+
+    // listFormIconButton.add(
+    //   FormIconButton(
+    //     caption: getTextWindowsKey('Impressora', 'F8'),
+    //     icon: Icons.print_outlined,
+    //     onTap: () {
+    //       Navigator.push(
+    //         context,
+    //         MaterialPageRoute(
+    //           builder: (context) => const ConfiguraImpressoraExPage(),
+    //         ),
+    //       ).then((value) {});
+    //     },
+    //   ),
+    // );
+
     listFormIconButton.add(
       FormIconButton(
-        caption: getTextWindowsKey('Inventário', 'F7'),
-        icon: Icons.inventory_outlined,
-        onTap: () {},
-      ),
-    );
-    listFormIconButton.add(
-      FormIconButton(
-        caption: getTextWindowsKey('Impressora', 'F8'),
-        icon: Icons.print_outlined,
+        caption: getTextWindowsKey('Consulta de Preços', 'F6'),
+        icon: Icons.search_outlined,
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ConfiguraImpressoraExPage(),
-            ),
-          ).then((value) {});
+          consultaPrecos(context);
         },
       ),
     );
+
     listFormIconButton.add(
       FormIconButton(
-        caption: getTextWindowsKey('Configurações', 'F9'),
-        icon: Icons.settings_outlined,
-        onTap: () {},
-      ),
-    );
-    listFormIconButton.add(
-      FormIconButton(
-        caption: getTextWindowsKey('Cor', 'F10'),
+        caption: getTextWindowsKey('Cor', 'F7'),
         icon: Icons.color_lens_outlined,
         onTap: () {
           gTema.changeColor(context);
         },
       ),
     );
+
     listFormIconButton.add(
       FormIconButton(
-        caption: getTextWindowsKey('Escuro/Claro', 'F11'),
+        caption: getTextWindowsKey('Escuro/Claro', 'F8'),
         icon: Icons.mode_night_outlined,
         onTap: () {
           gTema.changeTheme(context);
         },
       ),
     );
+
+    // listFormIconButton.add(
+    //   FormIconButton(
+    //     caption: getTextWindowsKey('Configurações', 'F9'),
+    //     icon: Icons.settings_outlined,
+    //     onTap: () {},
+    //   ),
+    // );
 
     List<Widget> w2 = [
       SizedBox(
@@ -240,7 +274,11 @@ class _MenuPageState extends State<MenuPage> {
           child: GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisSpacing: 15,
-                crossAxisCount: gDevice.isPhoneAll ? 2 : 3,
+                crossAxisCount: gDevice.isPhoneAll
+                    ? 2
+                    : gDevice.isTabletPortrait
+                        ? 3
+                        : 3,
                 mainAxisSpacing: 5,
                 mainAxisExtent: gDevice.isTabletLandscape ? 150 : 170,
               ),
@@ -272,7 +310,7 @@ class _MenuPageState extends State<MenuPage> {
                   ),
                 );
 
-                if (index == 0) {
+                if (index == 0 && gDevice.isAndroid && (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger')) {
                   var gradient = const LinearGradient(
                     colors: [
                       Colors.orange,
@@ -347,11 +385,11 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  void goCaixa(context) {
+  void goCaixa(context, CaixaModo modo) {
     Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (context) => const CaixaPage(),
+        builder: (context) => CaixaPage(modo: modo),
       ),
     ).then((value) {
       //log('value=$value');
@@ -369,25 +407,46 @@ class _MenuPageState extends State<MenuPage> {
     });
   }
 
-  Path drawStar(Size size) {
-    // Method to convert degree to radians
-    double degToRad(double deg) => deg * (pi / 180.0);
+  void consultaPrecos(context) {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => const ConsultaPrecosPage(),
+      ),
+    ).then((value) {
+      //log('value=$value');
+    });
+  }
 
-    const numberOfPoints = 5;
-    final halfWidth = size.width / 2;
-    final externalRadius = halfWidth;
-    final internalRadius = halfWidth / 2.5;
-    final degreesPerStep = degToRad(360 / numberOfPoints);
-    final halfDegreesPerStep = degreesPerStep / 2;
-    final path = Path();
-    final fullAngle = degToRad(360);
-    path.moveTo(size.width, halfWidth);
+  void menuPedido(context) {
+    final action = CupertinoActionSheet(
+      title: FacileTheme.headlineSmall(context, 'SELECIONE A FORMA DE ATENDIMENTO'),
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            goCaixa(context, CaixaModo.pedidoLoja);
+          },
+          child: FacileTheme.displaySmall(context, "ATENDIMENTO LOJA"),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            goCaixa(context, CaixaModo.pedidoZap);
+          },
+          child: FacileTheme.displaySmall(context, "ATENDIMENTO WHATSAPP"),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: FacileTheme.displaySmall(context, 'CANCELA'),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
 
-    for (double step = 0; step < fullAngle; step += degreesPerStep) {
-      path.lineTo(halfWidth + externalRadius * cos(step), halfWidth + externalRadius * sin(step));
-      path.lineTo(halfWidth + internalRadius * cos(step + halfDegreesPerStep), halfWidth + internalRadius * sin(step + halfDegreesPerStep));
-    }
-    path.close();
-    return path;
+    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
   }
 }

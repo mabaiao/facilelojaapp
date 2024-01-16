@@ -44,6 +44,7 @@ class _EditaClientePageState extends State<EditaClientePage> {
 
   final TextEditingController controllerNomeValidador = TextEditingController();
   final TextEditingController controllerCelularValidador = TextEditingController();
+  final TextEditingController controllerEmailValidador = TextEditingController();
   final TextEditingController controllerCpfCnpjValidador = TextEditingController();
   final TextEditingController controllerDiaNascimentoValidador = TextEditingController();
   final TextEditingController controllerMesNascimentoValidador = TextEditingController();
@@ -64,6 +65,7 @@ class _EditaClientePageState extends State<EditaClientePage> {
     }
 
     controllerCelularValidador.text = widget.registro.celular;
+    controllerEmailValidador.text = widget.registro.email;
 
     if (widget.registro.cpfCnpj.isNotEmpty && widget.registro.cpfCnpj.substring(0, 3) != '000') {
       controllerCpfCnpjValidador.text = widget.registro.cpfCnpj;
@@ -211,7 +213,7 @@ class _EditaClientePageState extends State<EditaClientePage> {
           : const SizedBox(),
 
       ///
-      /// Preços
+      /// Aniversario
       ///
 
       getEspacadorDuplo(),
@@ -293,6 +295,38 @@ class _EditaClientePageState extends State<EditaClientePage> {
         ],
       ),
 
+      getEspacadorDuplo(),
+      Row(
+        children: [
+          FacileTheme.headlineSmall(context, 'EMAIL OPCIONAL'),
+        ],
+      ),
+      getEspacadorDuplo(),
+
+      TextField(
+        inputFormatters: [
+          LengthLimitingTextInputFormatter(80),
+        ],
+        autofocus: false,
+        controller: controllerEmailValidador,
+        keyboardType: TextInputType.emailAddress,
+        decoration: const InputDecoration(
+          prefixIcon: Icon(Icons.email_outlined),
+          hintText: 'Informe e-mail',
+          label: Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                WidgetSpan(
+                  child: Text(
+                    'E-Mail',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+
       getEspacadorTriplo(),
       Padding(
         padding: const EdgeInsets.all(8.0),
@@ -372,6 +406,7 @@ class _EditaClientePageState extends State<EditaClientePage> {
     widget.registro.nome = controllerNomeValidador.text.trim();
     widget.registro.cpfCnpj = controllerCpfCnpjValidador.text.trim();
     widget.registro.celular = controllerCelularValidador.text.trim();
+    widget.registro.email = controllerEmailValidador.text.trim();
     widget.registro.diaNascimento = controllerDiaNascimentoValidador.text.trim();
     widget.registro.mesNascimento = controllerMesNascimentoValidador.text.trim();
     widget.registro.anoNascimento = controllerAnoNascimentoValidador.text.trim();
@@ -386,6 +421,7 @@ class _EditaClientePageState extends State<EditaClientePage> {
       'ID': widget.registro.id,
       'Nome': widget.registro.nome,
       'Celular': widget.registro.celular,
+      'Email': widget.registro.email,
       'CpfCnpj': widget.registro.cpfCnpj,
       'diaNascimento': widget.registro.diaNascimento,
       'mesNascimento': widget.registro.mesNascimento,
@@ -399,6 +435,15 @@ class _EditaClientePageState extends State<EditaClientePage> {
       snackBarMsg(context, aResult['Msg'], dur: 1000);
       Navigator.pop(context, PopReturns('okClick', ''));
     } else {
+      if (aResult['Status'] == 'Celular') {
+        widget.registro.celular = '';
+      }
+      if (aResult['Status'] == 'Email') {
+        widget.registro.email = '';
+      }
+      if (aResult['Status'] == 'CpfCnpj') {
+        widget.registro.cpfCnpj = '';
+      }
       facileSnackBarError(context, 'Ops!', aResult['Msg']);
     }
   }

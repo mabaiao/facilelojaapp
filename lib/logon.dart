@@ -45,6 +45,13 @@ class _LogonState extends State<LogonPage> {
           onTap: () {
             Navigator.pop(context);
           }));
+      listFloatingActionButton.add(
+        FormFloatingActionButton(
+          icon: Icons.login_outlined,
+          caption: getTextWindowsKey((gDevice.isWindows ? 'ENTRAR' : ''), 'ENTER'),
+          onTap: () {},
+        ),
+      );
     }
 
     load(context);

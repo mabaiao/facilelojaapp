@@ -38,6 +38,7 @@ Future<dynamic> facilePostEx(
   if (addParam) {
     params['Subdominio'] = gUsuario.subdominio.trim();
     params['idFuncionario'] = gUsuario.idFuncionario;
+    params['hostTerminalId'] = gUsuario.terminalId.trim();
     params['hostTerminal'] = gUsuario.terminalHost.trim();
     params['host'] = gUsuario.host;
     params['idLojaFisica'] = gUsuario.idLojaFisica;

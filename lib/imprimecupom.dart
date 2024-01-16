@@ -4,7 +4,6 @@ import 'package:avatar_glow/avatar_glow.dart';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -19,9 +18,9 @@ import 'utilpost.dart';
 
 class ImprimeCupomPage extends StatefulWidget {
   final String title;
-  final Cupom cupom;
+  final String idVenda;
 
-  const ImprimeCupomPage({super.key, required this.title, required this.cupom});
+  const ImprimeCupomPage({super.key, required this.title, required this.idVenda});
 
   @override
   State<ImprimeCupomPage> createState() => _ImprimeCupomState();
@@ -29,7 +28,6 @@ class ImprimeCupomPage extends StatefulWidget {
 
 class _ImprimeCupomState extends State<ImprimeCupomPage> {
   late ConfettiController _controllerCenter;
-  List<FormFloatingActionButton> listFloatingActionButton = [];
   List<Widget> bg = [];
   String svg = '';
 
@@ -46,18 +44,6 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
     super.initState();
 
     _controllerCenter = ConfettiController(duration: const Duration(seconds: 1));
-
-    if (gDevice.isWindows) {
-      listFloatingActionButton.add(
-        FormFloatingActionButton(
-          icon: CupertinoIcons.chevron_down,
-          caption: getTextWindowsKey((gDevice.isWindows ? 'CANCELAR' : ''), 'ESC'),
-          onTap: () {
-            Navigator.pop(context);
-          },
-        ),
-      );
-    }
 
     load(context);
   }
@@ -79,8 +65,7 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
 
     Map<String, String> params = {
       'Funcao': 'VendaLe',
-      //'id': widget.cupom.id,
-      'id': '32',
+      'idVenda': widget.idVenda,
     };
 
     var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: false);
@@ -207,6 +192,24 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
       bg = getBackground(context);
     }
 
+    List<FormFloatingActionButton> listFloatingActionButton = [];
+
+    listFloatingActionButton.add(FormFloatingActionButton(
+      icon: Icons.share_outlined,
+      caption: getTextWindowsKey('Compartilhar', 'F2'),
+      onTap: () {
+        imprime(context, 'compartilhar');
+      },
+    ));
+
+    listFloatingActionButton.add(FormFloatingActionButton(
+      icon: Icons.view_list_outlined,
+      caption: getTextWindowsKey('Visualizar', 'F2'),
+      onTap: () {
+        imprime(context, 'visualizar');
+      },
+    ));
+
     List<Widget> w1 = [
       SizedBox(
         height: getMaxSizedBoxLottieHeight(context),
@@ -230,9 +233,7 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
     List<Widget> w2 = [
       InkWell(
         onTap: () {
-          if (!isLoad) {
-            imprime(context);
-          }
+          imprime(context, 'imprimir');
         },
         child: AvatarGlow(
           glowColor: isLoad ? Colors.grey : FacileTheme.getColorHard(context),
@@ -255,10 +256,6 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
                     size: gDevice.isTabletAll ? 80 : 40,
                     color: Colors.white,
                   ),
-                  // Text(
-                  //   (gUsuario.siglaCargo == 'ope' ? 'ENVIAR' : 'PAGAR'),
-                  //   style: const TextStyle(color: Colors.white),
-                  // ),
                 ],
               ),
             ),
@@ -276,7 +273,7 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
       },
       child: SafeArea(
         child: Scaffold(
-          floatingActionButton: getFormFloatingActionButtonList(listFloatingActionButton),
+          floatingActionButton: getFormFloatingActionButtonList(listFloatingActionButton, isLoad: isLoad),
           appBar: getCupertinoAppBar(
             context,
             'IMPRESSÃO',
@@ -309,13 +306,13 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
     );
   }
 
-  void imprime(context) {
+  void imprime(context, String modo) {
     cupomLido.impressaoCupom(
       context,
       empresa,
       venda,
       opcoesImpressao,
-      'imprimir',
+      modo,
     );
   }
 }
