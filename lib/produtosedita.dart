@@ -15,6 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'cupom.dart';
 import 'produtosvariacoes.dart';
 
 ///
@@ -370,9 +371,9 @@ class _ProdutosEditarState extends State<ProdutosEditar> {
                   trailing: FloatingActionButton(
                     heroTag: null,
                     mini: true,
-                    child: const Icon(Icons.edit),
+                    child: const Icon(Icons.menu),
                     onPressed: () async {
-                      editaVariacao(context, _listProdutoVariacao.first);
+                      menuEditaVariacao(context, _listProdutoVariacao.first);
                     },
                   )
                       .animate(
@@ -416,7 +417,7 @@ class _ProdutosEditarState extends State<ProdutosEditar> {
       //                     mini: true,
       //                     child: const Icon(Icons.edit),
       //                     onPressed: () async {
-      //                       editaVariacao(context, _listProdutoVariacao[index]);
+      //                       menuEditaVariacao(context, _listProdutoVariacao[index]);
       //                     },
       //                   )
       //                       .animate(
@@ -558,9 +559,9 @@ class _ProdutosEditarState extends State<ProdutosEditar> {
           trailing: FloatingActionButton(
             heroTag: null,
             mini: true,
-            child: const Icon(Icons.edit),
+            child: const Icon(Icons.menu),
             onPressed: () async {
-              editaVariacao(context, item);
+              menuEditaVariacao(context, item);
             },
           )
               .animate(
@@ -674,7 +675,51 @@ class _ProdutosEditarState extends State<ProdutosEditar> {
     }
   }
 
-  void editaVariacao(context, variacao) {
+  void menuEditaVariacao(context, ProdutoVariacao variacao) {
+    String s = '${variacao.nomeCampoVarA} ${variacao.nomeCampoVarB} ${variacao.nomeCampoVarC} ';
+
+    final action = CupertinoActionSheet(
+      title: FacileTheme.headlineSmall(context, 'VARIACAO: ${s.trim()}'),
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            editaVariacao(context, variacao);
+          },
+          child: FacileTheme.displaySmall(context, "EDITAR"),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            impressaoEtiqueta(context, controllerNomeValidador.text, variacao.eanSistema);
+          },
+          child: FacileTheme.displaySmall(context, "ETIQUETA EAN SISTEMA ${variacao.eanSistema}"),
+        ),
+        variacao.eanFornecedor.isNotEmpty
+            ? CupertinoActionSheetAction(
+                isDefaultAction: true,
+                onPressed: () async {
+                  Navigator.pop(context);
+                  impressaoEtiqueta(context, controllerNomeValidador.text, variacao.eanFornecedor);
+                },
+                child: FacileTheme.displaySmall(context, "ETIQUETA EAN FORNECEDOR ${variacao.eanFornecedor}"),
+              )
+            : const SizedBox(),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: FacileTheme.displaySmall(context, 'CANCELA'),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+
+    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
+  }
+
+  void editaVariacao(context, ProdutoVariacao variacao) {
     ///
     /// Modo editar imagens
     ///

@@ -175,6 +175,8 @@ class _AutorizaState extends State<AutorizaPage> {
           backgroundColor: Colors.red.shade900,
         ),
         onPressed: () {
+          gDevice.beep();
+
           senha = '';
           setState(() {});
         },
@@ -190,6 +192,8 @@ class _AutorizaState extends State<AutorizaPage> {
           backgroundColor: FacileTheme.getColorPrimary(context),
         ),
         onPressed: () {
+          gDevice.beep();
+
           autorizar(context);
         },
       );
@@ -198,6 +202,8 @@ class _AutorizaState extends State<AutorizaPage> {
       caption: caption,
       style: ElevatedButton.styleFrom(),
       onPressed: () {
+        gDevice.beep();
+
         if (senha.length < 12) {
           senha += caption;
         }

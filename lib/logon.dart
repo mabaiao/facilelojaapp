@@ -272,6 +272,8 @@ class _LogonState extends State<LogonPage> {
 
       gUsuario.pin = senha;
       gUsuario.nomeLojaFisica = aResult['nomeLojaFisica'];
+      gUsuario.terminalImpressao = aResult['terminalImpressao'];
+      gUsuario.terminaisImpressao = aResult['terminaisImpressao'];
       gUsuario.idEmpresa = aResult['idEmpresa'];
       gUsuario.idFuncionario = aResult['idFuncionario'];
       gUsuario.primeiroNome = aResult['primeiroNome'];

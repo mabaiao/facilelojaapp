@@ -15,6 +15,8 @@ class FacileUser {
   late String terminalId = '';
   late String terminalHost = '';
   late String terminalNome = '';
+  late String terminalImpressao = '';
+  late String terminaisImpressao = '';
   late String host = '';
   late String pin = '';
   late String idFuncionario = '';
@@ -39,6 +41,8 @@ class FacileUser {
     terminalId = prefs.getString('terminalId') ?? '';
     terminalHost = prefs.getString('terminalHost') ?? '';
     terminalNome = prefs.getString('terminalNome') ?? '';
+    terminalImpressao = prefs.getString('terminalImpressao') ?? '';
+    terminaisImpressao = prefs.getString('terminaisImpressao') ?? '';
     host = prefs.getString('host') ?? '';
     idFuncionario = prefs.getString('idFuncionario') ?? '';
     primeiroNome = prefs.getString('primeiroNome') ?? '';
@@ -75,6 +79,8 @@ class FacileUser {
     prefs.setString('terminalId', terminalId);
     prefs.setString('terminalHost', terminalHost);
     prefs.setString('terminalNome', terminalNome);
+    prefs.setString('terminalImpressao', terminalImpressao);
+    prefs.setString('terminaisImpressao', terminaisImpressao);
     prefs.setString('host', host);
     prefs.setString('idFuncionario', idFuncionario);
     prefs.setString('primeiroNome', primeiroNome);
@@ -98,6 +104,8 @@ class FacileUser {
     log('USER::terminalId::$terminalId');
     log('USER::terminalHost::$terminalHost');
     log('USER::terminalNome::$terminalNome');
+    log('USER::terminalImpressao::$terminalImpressao');
+    log('USER::terminaisImpressao::$terminaisImpressao');
     log('USER::host::$host');
     log('USER::idFuncionario::$idFuncionario');
     log('USER::primeiroNome::$primeiroNome');

@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -12,15 +14,18 @@ import 'package:confetti/confetti.dart';
 
 import 'cupom.dart';
 import 'dados/empresa.dart';
+import 'dados/terminalimpressao.dart';
 import 'dados/venda.dart';
 import 'dados/vendaitem.dart';
+import 'dados/vendapagto.dart';
 import 'utilpost.dart';
 
 class ImprimeCupomPage extends StatefulWidget {
   final String title;
   final String idVenda;
+  final bool showConfetti;
 
-  const ImprimeCupomPage({super.key, required this.title, required this.idVenda});
+  const ImprimeCupomPage({super.key, required this.title, required this.idVenda, this.showConfetti = true});
 
   @override
   State<ImprimeCupomPage> createState() => _ImprimeCupomState();
@@ -35,6 +40,7 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
   late Empresa empresa;
   late Venda venda;
   late List<VendaItem> vendaItens;
+  late List<VendaPagto> vendaPagtos;
   late dynamic opcoesImpressao;
 
   bool isLoad = true;
@@ -99,6 +105,14 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
       log(vendaItens.toString());
 
       ///
+      /// Pagamentos
+      ///
+
+      v = await aResult['vendaPagtos'];
+      vendaPagtos = v.map((model) => VendaPagto.fromMap(model)).toList();
+      log(vendaPagtos.toString());
+
+      ///
       /// Opcoes de impressao
       ///
 
@@ -131,6 +145,7 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
         var o = CupomItem(
           idProduto: item.idProduto,
           nome: item.nome,
+          categoriaNome: item.categoriaNome,
           digitado: item.digitado,
           eanSistema: item.eanSistema,
           eanFornecedor: item.eanFornecedor,
@@ -140,7 +155,7 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
           qCom: double.parse(item.qCom),
           vUnCom: double.parse(item.vUnCom),
           custoAtual: double.parse(item.custoAtual),
-          imagemPrincipal: '',
+          imagemPrincipal: item.imagemPrincipal,
           unidadeSigla: item.nomeCampoVarA,
           temDesconto: double.parse(item.vDesc) > 0.00,
           atacado: false,
@@ -156,12 +171,26 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
         cupomLido.adicionaItem(o);
       }
 
+      for (var item in vendaPagtos) {
+        var o = CupomPagto(
+          codigoSefaz: item.codigoSefaz,
+          idMeioPagamento: item.idMeioPagamento,
+          gerarXml: item.gerarXml,
+          nome: item.nome,
+          parcelas: int.parse(item.parcelas),
+          valor: double.parse(item.valor),
+        );
+        cupomLido.adicionaPagto(context, o);
+      }
+
       cupomLido.recalcula();
 
       if (mounted) {
         setState(() {
           isLoad = false;
-          _controllerCenter.play();
+          if (widget.showConfetti) {
+            _controllerCenter.play();
+          }
         });
       }
 
@@ -196,17 +225,27 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
 
     listFloatingActionButton.add(FormFloatingActionButton(
       icon: Icons.share_outlined,
-      caption: getTextWindowsKey('Compartilhar', 'F2'),
+      caption: getTextWindowsKey('', 'F2'),
       onTap: () {
-        imprime(context, 'compartilhar');
+        menuFont(context, 'compartilhar');
       },
     ));
 
+    if (gUrlPost.nomeVersaoApp == 'Versão local') {
+      listFloatingActionButton.add(FormFloatingActionButton(
+        icon: Icons.window,
+        caption: getTextWindowsKey('Windows', 'F4'),
+        onTap: () {
+          menuEnviaFilaWindows(context);
+        },
+      ));
+    }
+
     listFloatingActionButton.add(FormFloatingActionButton(
       icon: Icons.view_list_outlined,
-      caption: getTextWindowsKey('Visualizar', 'F2'),
+      caption: getTextWindowsKey('Ver', 'F2'),
       onTap: () {
-        imprime(context, 'visualizar');
+        menuVer(context);
       },
     ));
 
@@ -306,13 +345,295 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
     );
   }
 
-  void imprime(context, String modo) {
+  void imprime(context, String modo, {estilizado = false, noFont = '1'}) {
     cupomLido.impressaoCupom(
       context,
       empresa,
       venda,
       opcoesImpressao,
       modo,
+      formato: (modo == 'compartilhar' || estilizado ? 'estilo' : ''),
+      noFont: noFont,
     );
+  }
+
+  void menuEnviaFilaWindows(context) async {
+    if (gUsuario.terminaisImpressao.isEmpty) {
+      facileSnackBarError(context, 'Ops!', 'Nenhum impressora windows configurada !');
+    }
+
+    List<Widget> acts = [];
+
+    Iterable va = jsonDecode(gUsuario.terminaisImpressao);
+    List<TerminalImpressao> listTerminalImpressao = va.map((model) => TerminalImpressao.fromMap(model)).toList();
+
+    for (var item in listTerminalImpressao) {
+      acts.add(
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            enviaFilaWindows(context, item);
+          },
+          child: Column(
+            children: [
+              FacileTheme.displayLarge(context, item.nome),
+              FacileTheme.displaySmall(context, '${item.nomeSistema} (${item.hostTerminal})'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final action = CupertinoActionSheet(
+      title: FacileTheme.headlineSmall(context, 'SELECIONE A IMPRESSORA'),
+      actions: acts,
+      cancelButton: CupertinoActionSheetAction(
+        child: FacileTheme.displaySmall(context, 'CANCELA'),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+
+    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
+  }
+
+  void enviaFilaWindows(context, TerminalImpressao item) async {
+    Uint8List bytes = await cupomLido.impressaoCupom(
+      context,
+      empresa,
+      venda,
+      opcoesImpressao,
+      'na',
+    );
+
+    Map<String, String> params = {
+      'Funcao': 'EnviaFilaImpressao',
+      'bytes': base64Encode(bytes),
+      'idTerminal': item.id,
+    };
+
+    var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: true);
+
+    if (aResult == null) {
+    } else if (aResult != null && aResult['Status'] == 'OK') {
+      snackBarMsg(context, aResult['Msg'], dur: 3000);
+    } else {
+      facileSnackBarError(context, 'Ops!', aResult['Msg']);
+    }
+  }
+
+  void menuVer(context) {
+    final action = CupertinoActionSheet(
+      title: FacileTheme.headlineSmall(context, 'VISUALIZAR'),
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            menuFont(context, 'visualizar');
+          },
+          child: FacileTheme.displaySmall(context, "ESTILIZADO"),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, 'visualizar');
+          },
+          child: FacileTheme.displaySmall(context, "NORMAL"),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: FacileTheme.displaySmall(context, 'CANCELA'),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+
+    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
+  }
+
+  void menuFont(context, modo) async {
+    final action = CupertinoActionSheet(
+      title: FacileTheme.headlineSmall(context, 'ESCOLHA O ESTILO'),
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '1');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('1'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '2');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('2'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '3');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('3'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '4');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('4'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '5');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('5'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '6');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('6'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '7');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('7'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '8');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('8'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '9');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('9'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '10');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('10'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '11');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('11'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '12');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('12'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '13');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('13'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '14');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('14'),
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            imprime(context, modo, estilizado: true, noFont: '15');
+          },
+          child: Text(
+            "ESTE É O ESTILO DA FONTE",
+            style: await getFontScr('15'),
+          ),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: FacileTheme.displaySmall(context, 'CANCELA'),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+
+    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
   }
 }

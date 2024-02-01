@@ -11,10 +11,29 @@ import 'package:http/http.dart' as http;
 
 class FacilePost {
   late String url = '';
+  late String versaoApp = '';
+  late String nomeVersaoApp = '';
 
   Future<void> load() async {
     url = await getFileData('imagens/facile.ini');
+
+    versaoApp = url.substring(0, 6) == 'https:' ? '1.1N' : '1.1L';
+    nomeVersaoApp = url.substring(0, 6) == 'https:' ? 'Versão cloud' : 'Versão local';
+
     log('POST::url::$url');
+    log('POST::versaoApp::$versaoApp');
+  }
+
+  ///
+  ///
+  ///
+
+  String getVersaoApp() {
+    return versaoApp;
+  }
+
+  String getNomeVersaoApp() {
+    return nomeVersaoApp;
   }
 }
 

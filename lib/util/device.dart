@@ -1,9 +1,14 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:beep_player/beep_player.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import '../dados/filaimpresao.dart';
+import '../utilpost.dart';
 
 /// **************************
 /// Controle usuario logado
@@ -13,6 +18,7 @@ class FacileDevice {
   static const BeepFile _beepFile = BeepFile('sounds/Ok.wav');
   static const BeepFile _beepFileErr = BeepFile('sounds/Err.wav');
 
+  bool printServiceRunning = false;
   bool isWindows = false;
   bool isAndroid = false;
   bool isWeb = false;
@@ -125,5 +131,71 @@ class FacileDevice {
     if (!Platform.isWindows) {
       BeepPlayer.play(_beepFileErr);
     }
+  }
+
+  void startPrintService(context) {
+    log('DEVICE::PrintService::Iniciado !');
+    printServiceRunning = true;
+    evalPrintService(context);
+  }
+
+  void stopPrintService(context) {
+    printServiceRunning = false;
+    log('DEVICE::PrintService::Parado !');
+  }
+
+  Future<void> evalPrintService(context) async {
+    log('DEVICE::PrintService::Processando...');
+
+    Map<String, String> params = {
+      'Funcao': 'LeFilaImpressao',
+    };
+
+    var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: false);
+
+    if (aResult == null) {
+    } else if (aResult != null && aResult['Status'] == 'OK') {
+      Iterable v = await aResult['FilaImpressao'];
+      List<FilaImpressao> filaList = v.map((model) => FilaImpressao.fromMap(model)).toList();
+
+      log('DEVICE::PrintService::Pendentes::${filaList.length}');
+
+      List<String> ids = [];
+
+      for (FilaImpressao item in filaList) {
+        String filename = 'print/print_${item.id}.pdf';
+        Uint8List bytes = base64Decode(item.file);
+        await File(filename).writeAsBytes(bytes);
+
+        ids.add(item.id);
+      }
+
+      if (ids.isNotEmpty) {
+        freePrintService(context, ids);
+      }
+
+      if (printServiceRunning) {
+        Timer(const Duration(milliseconds: 3000), () {
+          if (context.mounted) {
+            evalPrintService(context);
+          }
+        });
+      }
+    } else {}
+  }
+
+  Future<void> freePrintService(context, ids) async {
+    log('DEVICE::PrintService::Processando...');
+
+    Map<String, String> params = {
+      'Funcao': 'ConfirmaFilaImpressaoPorIds',
+      'IDs': json.encode(ids),
+    };
+
+    var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: false);
+
+    if (aResult == null) {
+    } else if (aResult != null && aResult['Status'] == 'OK') {
+    } else {}
   }
 }

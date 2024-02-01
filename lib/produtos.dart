@@ -159,6 +159,10 @@ class _ProdutosState extends State<ProdutosPage> {
     if (index == -1) {
       controllerBuscaValidador.text = stringPesquisa;
       stringPesquisa = '';
+      if (controllerBuscaValidador.text.length == 12) {
+        controllerBuscaValidador.text = '0${controllerBuscaValidador.text}';
+      }
+
       load(context);
     } else if (!isLoad && stringPesquisa.isEmpty) {
       Navigator.pop(

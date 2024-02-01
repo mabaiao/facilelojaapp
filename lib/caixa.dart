@@ -23,11 +23,15 @@ import 'dados/cadastrounico.dart';
 import 'dados/funcionario.dart';
 import 'dados/produto.dart';
 import 'dados/produtovariacao.dart';
+import 'dados/venda.dart';
+import 'dados/vendaitem.dart';
 import 'imprimecupom.dart';
 import 'lecliente.dart';
 import 'leformapagamento.dart';
 import 'levalor.dart';
 import 'main.dart';
+import 'pagar.dart';
+import 'produtosimagens.dart';
 import 'util.dart';
 import 'utiltema.dart';
 
@@ -39,8 +43,10 @@ enum CaixaModo {
 
 class CaixaPage extends StatefulWidget {
   final CaixaModo modo;
+  final String idVenda;
+  final String idVendaImagem;
 
-  const CaixaPage({super.key, required this.modo});
+  const CaixaPage({super.key, required this.modo, this.idVenda = '', this.idVendaImagem = ''});
 
   @override
   State<CaixaPage> createState() => _CaixaPageState();
@@ -77,7 +83,7 @@ class _CaixaPageState extends State<CaixaPage> {
       idLojaFisica: gUsuario.idLojaFisica,
       idEmpresa: gUsuario.idEmpresa,
       idFuncionario: gUsuario.idFuncionario,
-      tipoMovimento: (gUsuario.siglaCargo == 'ven' ? CupomTipoMovimento.pedido.index.toString() : CupomTipoMovimento.venda.index.toString()),
+      tipoMovimento: (widget.modo != CaixaModo.venda ? CupomTipoMovimento.pedido.index.toString() : CupomTipoMovimento.venda.index.toString()),
       host: gUsuario.host,
     );
 
@@ -97,6 +103,12 @@ class _CaixaPageState extends State<CaixaPage> {
     } else if (aResult != null && aResult['Status'] == 'OK') {
       Iterable v = await aResult['listVendedores'];
       listVendedores = v.map((model) => Funcionario.fromMap(model)).toList();
+
+      ///
+      /// Caso passou o id da venda dispara o carregamento do cupom
+      ///
+
+      loadCupom(context);
     } else {
       facileSnackBarError(context, 'Ops!', aResult['Msg']);
     }
@@ -176,13 +188,29 @@ class _CaixaPageState extends State<CaixaPage> {
       ));
     }
 
-    listIconButton.add(FormIconButton(
-      icon: CupertinoIcons.trash,
-      caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Scanner', 'F4'),
-      onTap: () {
-        limparCupom(context);
-      },
-    ));
+    if (widget.idVenda.isNotEmpty) {
+      listFloatingActionButton = [];
+
+      if (!painelDeExpansaoPreco) {
+        listFloatingActionButton.add(FormFloatingActionButton(
+          icon: Icons.close,
+          caption: getTextWindowsKey('VOLTAR', 'ESC'),
+          onTap: () {
+            Navigator.pop(context);
+          },
+        ));
+      }
+    }
+
+    if (_cupom.itens.isNotEmpty) {
+      listIconButton.add(FormIconButton(
+        icon: CupertinoIcons.trash,
+        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Scanner', 'F4'),
+        onTap: () {
+          limparCupom(context);
+        },
+      ));
+    }
 
     listIconButton.add(FormIconButton(
       icon: CupertinoIcons.barcode,
@@ -195,43 +223,70 @@ class _CaixaPageState extends State<CaixaPage> {
       },
     ));
 
-    listIconButton.add(FormIconButton(
-      icon: Icons.percent_outlined,
-      caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Desconto', 'F8'),
-      onTap: () {
-        menuDescontoGeral(context);
-      },
-    ));
-
-    if (gUsuario.siglaCargo != 'ven' && widget.modo == CaixaModo.venda) {
+    if (_cupom.itens.isNotEmpty) {
       listIconButton.add(FormIconButton(
-        icon: Icons.person_2_outlined,
-        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Atendimento', 'F9'),
+        icon: Icons.percent_outlined,
+        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Desconto', 'F8'),
         onTap: () {
-          selecionaAtendimento(context);
+          menuDescontoGeral(context);
         },
       ));
     }
 
-    listIconButton.add(FormIconButton(
-      icon: Icons.add_reaction_outlined,
-      caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Cliente', 'F9'),
-      onTap: () {
-        menuInformarCliente(context);
-      },
-    ));
+    if (_cupom.itens.isNotEmpty) {
+      if (gUsuario.siglaCargo != 'ven' && widget.modo == CaixaModo.venda) {
+        listIconButton.add(FormIconButton(
+          icon: Icons.emoji_emotions_outlined,
+          caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Atendimento', 'F9'),
+          onTap: () {
+            var x = painelDeExpansaoPreco;
+            setState(() {
+              painelDeExpansaoPreco = false;
+            });
 
-    listIconButton.add(FormIconButton(
-      icon: Icons.credit_card,
-      caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Atendimento', 'F9'),
-      onTap: () {
-        informarMeioPagamento(context);
-      },
-    ));
+            Timer(Duration(milliseconds: x ? 499 : 0), () {
+              selecionaAtendimento(context);
+            });
+          },
+        ));
+      }
+    }
 
-    if (gUsuario.siglaCargo == 'ven') {
+    if (_cupom.itens.isNotEmpty) {
+      listIconButton.add(FormIconButton(
+        icon: Icons.person_2_outlined,
+        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Cliente', 'F9'),
+        onTap: () {
+          menuInformarCliente(context);
+        },
+      ));
+    }
+
+    if (_cupom.itens.isNotEmpty) {
+      listIconButton.add(FormIconButton(
+        icon: Icons.credit_card,
+        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Atendimento', 'F9'),
+        onTap: () {
+          var x = painelDeExpansaoPreco;
+          setState(() {
+            painelDeExpansaoPreco = false;
+          });
+
+          Timer(Duration(milliseconds: x ? 499 : 0), () {
+            if (widget.modo == CaixaModo.venda) {
+              pagar(context);
+            } else {
+              informarMeioPagamento(context);
+            }
+          });
+        },
+      ));
+    }
+
+    if (widget.modo != CaixaModo.venda) {
       _cupom.idFuncionarioComissionado = gUsuario.idFuncionario;
       _cupom.primeiroNomeComissionado = gUsuario.nome;
+      _cupom.imagemComissionado = gUsuario.imagem;
     }
 
     listIconButton.add(FormIconButton(
@@ -241,6 +296,26 @@ class _CaixaPageState extends State<CaixaPage> {
         pesquisar(context);
       },
     ));
+
+    if (_cupom.itens.isEmpty) {
+      listIconButton.add(FormIconButton(
+        icon: Icons.receipt_long_rounded,
+        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Atendimento', 'F9'),
+        onTap: () {},
+      ));
+    }
+
+    if (widget.idVenda.isNotEmpty) {
+      listIconButton = [];
+
+      listIconButton.add(FormIconButton(
+        icon: Icons.credit_card,
+        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Atendimento', 'F9'),
+        onTap: () {
+          pagar(context);
+        },
+      ));
+    }
 
     List<Widget> w1 = [
       SizedBox(
@@ -266,15 +341,26 @@ class _CaixaPageState extends State<CaixaPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 40, right: 15),
-                            child: getSlogan(context,
-                                proporcao: 0.3,
-                                title: (widget.modo == CaixaModo.venda
-                                    ? 'CAIXA'
-                                    : widget.modo == CaixaModo.pedidoLoja
-                                        ? 'LOJA'
-                                        : 'ZAP')),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                painelDeExpansaoPreco = !painelDeExpansaoPreco;
+                              });
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.only(bottom: gDevice.isTabletAll ? 50 : 40, right: gDevice.isTabletAll ? 25 : 15),
+                              child: getSlogan(context,
+                                  proporcao: gDevice.isTabletAll ? 0.5 : 0.3,
+                                  title: (widget.modo == CaixaModo.venda
+                                      ? 'CAIXA'
+                                      : widget.modo == CaixaModo.pedidoLoja
+                                          ? 'LOJA'
+                                          : 'ZAP')),
+                            ).animate(onPlay: (controller) => controller.repeat()).rotate(
+                                  delay: 9000.ms, duration: painelDeExpansaoPreco ? 0.ms : 500.ms,
+                                  //offset: const Offset(3, 3),
+                                  //rotation: 0,
+                                ),
                           ),
                         ],
                       ),
@@ -369,22 +455,42 @@ class _CaixaPageState extends State<CaixaPage> {
                                   }
 
                                   ///
-                                  /// Verifica obrigacao de fazer o pagamento para
+                                  /// Verifica obrigacao de informar o vendedor
                                   ///
 
-                                  if (widget.modo == CaixaModo.venda && _cupom.pagtos.isEmpty) {
-                                    snackBarMsg(context, 'Informar pagamento!', dur: 1000);
+                                  if (widget.modo == CaixaModo.venda && _cupom.idFuncionarioComissionado == '0' && gParametros.vendaSolicitarAtendimento == 'S') {
+                                    snackBarMsg(context, 'Informar atendimento!', dur: 1000);
                                     setState(() {
                                       painelDeExpansaoPreco = false;
                                     });
                                     Timer(const Duration(milliseconds: 1000), () {
-                                      //informarMeioPagamento(context);
+                                      selecionaAtendimento(context);
                                     });
 
                                     return;
                                   }
 
-                                  emitir(context);
+                                  ///
+                                  /// Verifica obrigacao de fazer o pagamento para
+                                  ///
+
+                                  // if (widget.modo == CaixaModo.venda && _cupom.pagtos.isEmpty) {
+                                  //   snackBarMsg(context, 'Informar pagamento!', dur: 1000);
+                                  //   setState(() {
+                                  //     painelDeExpansaoPreco = false;
+                                  //   });
+                                  //   Timer(const Duration(milliseconds: 1000), () {
+                                  //     //informarMeioPagamento(context);
+                                  //   });
+
+                                  //   return;
+                                  // }
+
+                                  if (widget.modo == CaixaModo.venda) {
+                                    pagar(context);
+                                  } else {
+                                    emitir(context);
+                                  }
                                 },
                                 child: AvatarGlow(
                                   glowColor: Colors.green.shade900,
@@ -403,13 +509,13 @@ class _CaixaPageState extends State<CaixaPage> {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Icon(
-                                            (gUsuario.siglaCargo == 'ven' ? Icons.send : Icons.point_of_sale_outlined),
+                                            (widget.modo == CaixaModo.venda ? Icons.point_of_sale_outlined : Icons.send),
                                             size: gDevice.isTabletAll ? 80 : 40,
                                             color: Colors.white,
                                           ),
                                           FacileTheme.headlineMedium(
                                             context,
-                                            (gUsuario.siglaCargo == 'ven' ? 'ENVIAR' : 'PAGAR'),
+                                            widget.modo == CaixaModo.venda ? 'PAGAR' : 'ENVIAR',
                                             invert: true,
                                           ),
                                         ],
@@ -477,16 +583,14 @@ class _CaixaPageState extends State<CaixaPage> {
               mini: gDevice.isPhoneSmall ? true : false,
               animate: true,
             ),
-            appBar: gDevice.isWindows
-                ? null
-                : getCupertinoAppBarCheck(
-                    context,
-                    '', //'${gDevice.isTabletAll ? 'Itens ' : ''}(${_cupom.qtdProdutos.toStringAsFixed(0)})',
-                    listIconButton,
-                    false,
-                    addCheck: false,
-                    addBack: false,
-                  ),
+            appBar: getCupertinoAppBarCheck(
+              context,
+              (widget.idVenda.isEmpty ? '' : 'FINALIZANDO PEDIDO ${widget.idVenda}'),
+              listIconButton,
+              false,
+              addCheck: false,
+              addBack: false,
+            ),
             body: Column(
               children: w1,
             ),
@@ -508,6 +612,10 @@ class _CaixaPageState extends State<CaixaPage> {
       end: Alignment.bottomCenter,
     );
 
+    String sImage = widget.idVendaImagem.isEmpty ? _cupom.imagemComissionado : widget.idVendaImagem;
+
+    log('imagemComissionado::::${_cupom.imagemComissionado}');
+
     return _cupom.primeiroNomeComissionado.isEmpty
         ? const SizedBox()
         : Column(
@@ -516,40 +624,61 @@ class _CaixaPageState extends State<CaixaPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Container(
-                    width: getMaxSizedBoxWidth(context) * 0.7,
-                    height: (gDevice.isTabletAll ? 80 : 40),
-                    //padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 2 : 1),
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(30),
-                        bottomRight: Radius.circular(30),
+                  InkWell(
+                    onTap: () {
+                      if (widget.idVenda.isNotEmpty) {
+                        return;
+                      }
+
+                      var x = painelDeExpansaoPreco;
+                      setState(() {
+                        painelDeExpansaoPreco = false;
+                      });
+
+                      Timer(Duration(milliseconds: x ? 499 : 0), () {
+                        selecionaAtendimento(context);
+                      });
+                    },
+                    child: Container(
+                      width: getMaxSizedBoxWidth(context) * 0.7,
+                      height: (gDevice.isTabletAll ? 80 : 40),
+                      //padding: getPaddingDefault(context) * (gDevice.isTabletAll ? 2 : 1),
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                        gradient: gradient,
                       ),
-                      gradient: gradient,
-                    ),
-                    child: Row(
-                      children: [
-                        gUsuario.imagem.isEmpty
-                            ? const SizedBox()
-                            : SizedBox(
-                                width: (gDevice.isTabletAll ? 50 : 25),
-                                height: (gDevice.isTabletAll ? 50 : 25),
-                                child: ClipOval(
-                                  child: SizedBox.fromSize(
-                                    size: Size.fromRadius(
-                                      getMaxSizedImagemProfile(context),
-                                    ),
-                                    child: Image.network(
-                                      gUsuario.imagem,
-                                      fit: BoxFit.cover,
+                      child: Row(
+                        children: [
+                          sImage.isEmpty
+                              ? const SizedBox()
+                              : SizedBox(
+                                  width: (gDevice.isTabletAll ? 50 : 25),
+                                  height: (gDevice.isTabletAll ? 50 : 25),
+                                  child: ClipOval(
+                                    child: SizedBox.fromSize(
+                                      size: Size.fromRadius(
+                                        getMaxSizedImagemProfile(context),
+                                      ),
+                                      child: sImage.contains('svg')
+                                          ? SvgPicture.network(
+                                              sImage,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Image.network(
+                                              sImage,
+                                              fit: BoxFit.cover,
+                                            ),
                                     ),
                                   ),
                                 ),
-                              ),
-                        FacileTheme.displayMedium(context, _cupom.primeiroNomeComissionado),
-                      ],
-                    ),
-                  ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.black54),
+                          FacileTheme.displayMedium(context, _cupom.primeiroNomeComissionado),
+                        ],
+                      ),
+                    ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.black54),
+                  ),
                 ],
               ),
             ],
@@ -578,6 +707,10 @@ class _CaixaPageState extends State<CaixaPage> {
                 children: [
                   InkWell(
                     onTap: () {
+                      if (widget.idVenda.isNotEmpty) {
+                        return;
+                      }
+
                       painelDeExpansaoPreco = false;
                       informarMeioPagamento(context);
                     },
@@ -629,12 +762,22 @@ class _CaixaPageState extends State<CaixaPage> {
                 children: [
                   InkWell(
                     onTap: () {
-                      painelDeExpansaoPreco = false;
-                      editaCliente(
-                        context,
-                        modoCliente,
-                        registroCliente,
-                      );
+                      if (widget.idVenda.isNotEmpty) {
+                        return;
+                      }
+
+                      var x = painelDeExpansaoPreco;
+                      setState(() {
+                        painelDeExpansaoPreco = false;
+                      });
+
+                      Timer(Duration(milliseconds: x ? 499 : 0), () {
+                        editaCliente(
+                          context,
+                          modoCliente,
+                          registroCliente,
+                        );
+                      });
                     },
                     child: Container(
                       width: getMaxSizedBoxWidth(context) * (gDevice.isTabletAll ? 0.8 : 0.9),
@@ -649,7 +792,7 @@ class _CaixaPageState extends State<CaixaPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.emoji_emotions_outlined, size: gDevice.isTabletAll ? 32 : 24),
+                          Icon(Icons.person_2_outlined, size: gDevice.isTabletAll ? 32 : 24),
                           FacileTheme.displayMedium(context, '${_cupom.nomeCliente} - ${(modoCliente.index == LeClienteModo.celular.index ? registroCliente.celular : registroCliente.cpfCnpjF)}'),
                         ],
                       ),
@@ -670,7 +813,7 @@ class _CaixaPageState extends State<CaixaPage> {
     return _cupom.itens.isEmpty
         ? const SizedBox()
         : Opacity(
-            opacity: .9,
+            opacity: .80,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -697,20 +840,28 @@ class _CaixaPageState extends State<CaixaPage> {
                                     : getMaxSizedBoxWidth(context)
                                 : gDevice.isTabletAll
                                     ? 180
-                                    : 90,
+                                    : 110,
                             width: painelDeExpansaoPreco
                                 ? gDevice.isTabletAll
                                     ? getMaxSizedBoxWidth(context) * .8
                                     : getMaxSizedBoxWidth(context)
                                 : gDevice.isTabletAll
                                     ? 180
-                                    : 90,
+                                    : 110,
                             child: Container(
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: FacileTheme.getColorButton(context),
-                                  width: 1,
+                                  color: Colors.black,
+                                  width: 2,
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: gTema.modo == 'dark' ? Colors.grey : Colors.black,
+                                    spreadRadius: 0.1,
+                                    blurRadius: 20,
+                                    offset: const Offset(-3, -3),
+                                  ),
+                                ],
                                 borderRadius: BorderRadius.only(
                                   topLeft: Radius.circular(painelDeExpansaoPreco
                                       ? gDevice.isTabletAll
@@ -720,7 +871,8 @@ class _CaixaPageState extends State<CaixaPage> {
                                           ? 390
                                           : 190),
                                 ),
-                                color: FacileTheme.getColorHard(context),
+                                //color: FacileTheme.getColorHard(context),
+                                color: const Color.fromARGB(255, 7, 0, 20),
                               ),
                               child: Stack(
                                 children: [
@@ -835,7 +987,12 @@ class _CaixaPageState extends State<CaixaPage> {
                                 ],
                               ),
                             ),
-                          ),
+                          ).animate(onPlay: (controller) => controller.repeat()).shake(
+                                delay: 4000.ms,
+                                duration: painelDeExpansaoPreco ? 0.ms : 500.ms,
+                                offset: const Offset(3, 3),
+                                rotation: 0,
+                              ),
                         ),
                         getEspacadorVertical(),
                       ],
@@ -855,7 +1012,7 @@ class _CaixaPageState extends State<CaixaPage> {
       return Opacity(
         opacity: painelDeExpansaoPreco ? 0.4 : 1,
         child: ListView.builder(
-          padding: const EdgeInsets.only(bottom: 200),
+          padding: const EdgeInsets.only(bottom: 400),
           controller: controllerList,
           itemCount: _cupom.itens.length,
           itemBuilder: (context, index) => Dismissible(
@@ -878,6 +1035,10 @@ class _CaixaPageState extends State<CaixaPage> {
             ),
             //onDismissed: (_) {
             confirmDismiss: (DismissDirection direction) async {
+              if (widget.idVenda.isNotEmpty) {
+                return false;
+              }
+
               return await removeItem(context, index);
             },
 
@@ -885,7 +1046,11 @@ class _CaixaPageState extends State<CaixaPage> {
             /// Item produto da lista
             ///
             child: Container(
-              height: gDevice.isTabletAll ? 170 : 130,
+              height: gDevice.isTabletAll
+                  ? 170
+                  : widget.idVenda.isEmpty
+                      ? 130
+                      : 150,
               margin: EdgeInsets.only(
                 left: 8,
                 top: gDevice.isTabletAll ? 5 : 10,
@@ -895,22 +1060,39 @@ class _CaixaPageState extends State<CaixaPage> {
               decoration: BoxDecoration(
                 border: _cupom.itens[index].daVez
                     ? Border.all(
-                        color: FacileTheme.getColorHard(context),
+                        color: FacileTheme.getColorPrimary(context),
                         width: 2,
                       )
                     : Border.all(
-                        color: Colors.grey.shade300,
+                        color: FacileTheme.getColorButton(context).withOpacity(.3),
                         width: 2,
                       ),
                 borderRadius: const BorderRadius.all(
                   Radius.circular(10),
                 ),
-                color: Theme.of(context).colorScheme.background,
+                color: (widget.idVenda.isNotEmpty && _cupom.itens[index].daVez) ? null : Theme.of(context).colorScheme.background,
               ),
               child: InkWell(
                 onTap: () {
+                  if (widget.idVenda.isNotEmpty) {
+                    ///
+                    /// Retorna pois o caixa nao pode alterar o pedido
+                    /// Faz uma marcacao alternativa de item conferido
+                    ///
+                    _cupom.itens[index].daVez = !_cupom.itens[index].daVez;
+                    setState(() {});
+
+                    return;
+                  }
+
                   final action = CupertinoActionSheet(
-                    title: FacileTheme.headlineSmall(context, 'ITEM ${index + 1} DO CUPOM'),
+                    title: Column(
+                      children: [
+                        FacileTheme.headlineSmall(context, 'ITEM ${index + 1} DO CUPOM'),
+                        const Divider(),
+                        FacileTheme.displaySmall(context, _cupom.itens[index].nome, hard: true),
+                      ],
+                    ),
                     actions: <Widget>[
                       CupertinoActionSheetAction(
                         isDefaultAction: true,
@@ -968,10 +1150,10 @@ class _CaixaPageState extends State<CaixaPage> {
                               },
                             );
                           } else {
-                            showSimNao(context, 'REMOVER ITEM ?', '', () async {
-                              Navigator.pop(context);
-                              aplicaRemove();
-                            });
+                            //showSimNao(context, 'REMOVER ITEM ?', '', () async {
+                            //Navigator.pop(context);
+                            aplicaRemove();
+                            //});
                           }
                         },
                         child: FacileTheme.displaySmall(context, "REMOVER ESTE ITEM DO CUPOM"),
@@ -1005,9 +1187,6 @@ class _CaixaPageState extends State<CaixaPage> {
                 },
                 child: Stack(
                   children: [
-                    /// **************************
-                    /// Image
-                    ///
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1026,11 +1205,81 @@ class _CaixaPageState extends State<CaixaPage> {
                                   ),
                                   height: gDevice.isWindows || gDevice.isTabletAll ? 160 : 90,
                                 )
-                              : getImageDefault(context, _cupom.itens[index].imagemPrincipal, inList: true),
+                              : InkWell(
+                                  onTap: () {
+                                    ///
+                                    /// Modo editar imagens
+                                    ///
+                                    PopReturns result = PopReturns('', '');
+
+                                    Produto prod = Produto(
+                                      id: _cupom.itens[index].idProduto,
+                                      dataCadastro: '',
+                                      dataAlteracao: '',
+                                      nome: _cupom.itens[index].nome,
+                                      ativo: '',
+                                      idCategoria: '',
+                                      idFornecedor: '',
+                                      idMenorUnidade: '',
+                                      idMaiorUnidade: '',
+                                      fatorConversaoUnidade: '',
+                                      estoqueMinimo: '',
+                                      ncm: '',
+                                      cest: '',
+                                      idTributacao: '',
+                                      precoCusto: '',
+                                      pCustoIpi: '',
+                                      pCustoST: '',
+                                      pCustoFrete: '',
+                                      observacoes: '',
+                                      altura: '',
+                                      largura: '',
+                                      profundidade: '',
+                                      peso: '',
+                                      descricaoDetalhada: '',
+                                      precoVendaVarejo: '',
+                                      precoVendaAtacado: '',
+                                      precoVendaPromocional: '',
+                                      categoriaId: '',
+                                      categoriaNome: '',
+                                      fornecedorId: '',
+                                      fornecedorNomeSistema: '',
+                                      fornecedorNome: '',
+                                      precoVendaVarejoF: '',
+                                      precoVendaAtacadoF: '',
+                                      precoVendaPromocionalF: '',
+                                      jsonImagens: '',
+                                      imagemPrincipal: '',
+                                      hoje: '',
+                                      tributacaoNome: '',
+                                      precoCustoFinal: '',
+                                      temVariacaoUnica: '',
+                                      idVariacaoUnica: '',
+                                      unidadeSigla: '',
+                                      primeiroEanSistema: '',
+                                      variacoes: '',
+                                    );
+
+                                    showCupertinoModalBottomSheet(
+                                      duration: getCupertinoModalBottomSheetDuration(),
+                                      context: context,
+                                      builder: (context) => ProdutosImagens(
+                                        produto: prod,
+                                        popReturns: result,
+                                        svgSemFoto: svgSemFoto,
+                                      ),
+                                    ).then(
+                                      (value) {
+                                        setState(() {});
+                                      },
+                                    );
+                                  },
+                                  child: getImageDefault(context, _cupom.itens[index].imagemPrincipal, inList: true),
+                                ),
                         ),
 
                         /// **************************
-                        /// EAN
+                        /// Descricao
                         ///
                         Flexible(
                           child: Container(
@@ -1039,6 +1288,7 @@ class _CaixaPageState extends State<CaixaPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 FacileTheme.headlineSmall(context, _cupom.itens[index].digitado),
+                                FacileTheme.displaySmall(context, _cupom.itens[index].categoriaNome, hard: true, fontSize: (gDevice.isPhoneAll ? 12 : 0)),
                                 Row(
                                   children: [
                                     Expanded(
@@ -1127,6 +1377,10 @@ class _CaixaPageState extends State<CaixaPage> {
                                     heroTag: null,
                                     onPressed: () {
                                       setState(() {
+                                        if (widget.idVenda.isNotEmpty) {
+                                          return;
+                                        }
+
                                         _cupom.decrementa(index);
                                       });
                                     },
@@ -1156,6 +1410,10 @@ class _CaixaPageState extends State<CaixaPage> {
                                     heroTag: null,
                                     onPressed: () {
                                       setState(() {
+                                        if (widget.idVenda.isNotEmpty) {
+                                          return;
+                                        }
+
                                         _cupom.incrementa(index);
                                       });
                                     },
@@ -1265,6 +1523,37 @@ class _CaixaPageState extends State<CaixaPage> {
                     ),
 
                     ///
+                    /// Marcacao de conferido
+                    ///
+
+                    (widget.idVenda.isNotEmpty && _cupom.itens[index].daVez
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Transform(
+                                    alignment: FractionalOffset.center,
+                                    transform: Matrix4.identity()..rotateZ(7 * 3.1415927 / -180),
+                                    //child: FacileTheme.headlineLarge(context, 'C O N F E R I D O'),
+                                    child: Text('CONFERIDO',
+                                        style: GoogleFonts.blackOpsOne(
+                                          fontSize: 30,
+                                          foreground: Paint()
+                                            ..style = PaintingStyle.fill
+                                            ..strokeWidth = 2
+                                            ..color = FacileTheme.getColorPrimary(context),
+                                          //color: FacileTheme.getColorHard(context),
+                                        )),
+                                  ).animate(onPlay: (controller) => controller.repeat()).shake(delay: 4000.ms, duration: 500.ms),
+                                ],
+                              ),
+                            ],
+                          )
+                        : const SizedBox())
+
+                    ///
                     /// Fim
                     ///
                   ],
@@ -1284,9 +1573,9 @@ class _CaixaPageState extends State<CaixaPage> {
           gDevice.isPhoneAll || gDevice.isTabletAll ? const SizedBox() : getEspacadorTriplo(),
           gDevice.isPhoneAll || gDevice.isTabletAll ? const SizedBox() : getEspacadorTriplo(),
           Icon(
-            Icons.shopping_cart_outlined,
+            widget.modo == CaixaModo.pedidoZap ? Icons.chat_outlined : Icons.shopping_cart_outlined,
             size: gDevice.isTabletAll ? 150 : 80,
-            color: FacileTheme.getColorHard(context),
+            color: FacileTheme.getColorPrimary(context),
           ).animate(onPlay: (controller) => controller.repeat()).shake(delay: 1400.ms, duration: 1000.ms),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1305,7 +1594,8 @@ class _CaixaPageState extends State<CaixaPage> {
           ),
           FacileTheme.headlineSmall(context, gUsuario.nomeLojaFisica).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey),
           FacileTheme.headlineSmall(context, gUsuario.nome),
-          FacileTheme.headlineSmall(context, 'Terminal ${gUsuario.host} em ${gUsuario.subdominio.toUpperCase()}'),
+          FacileTheme.headlineSmall(context, '${gUsuario.terminalHost} ${gUsuario.terminalNome}'),
+          FacileTheme.headlineSmall(context, 'Dispositivo ${gUsuario.host}'),
 
           _cupom.itens.isNotEmpty
               ? const SizedBox()
@@ -1414,10 +1704,17 @@ class _CaixaPageState extends State<CaixaPage> {
         (value) {
           if (value != null && value.action == 'searchClick') {
             log('value=${value.param.toString()}');
+
+            String codigo = value.param;
+
+            if (codigo.length == 12) {
+              codigo = '0$codigo';
+            }
+
             Navigator.push(
               context,
               CupertinoPageRoute(
-                builder: (context) => ProdutosPage(modo: ProdutosModo.selecionarUnico, find: value.param),
+                builder: (context) => ProdutosPage(modo: ProdutosModo.selecionarUnico, find: codigo),
               ),
             ).then(
               (value) {
@@ -1467,17 +1764,18 @@ class _CaixaPageState extends State<CaixaPage> {
         );
       });
     } else {
-      showSimNao(context, 'REMOVER ITEM ?', '', () async {
-        Navigator.pop(context);
-        aplicaRemove();
-      });
+      //showSimNao(context, 'REMOVER ITEM ?', '', () async {
+      //Navigator.pop(context);
+      aplicaRemove();
+      //});
       return true;
     }
     return false;
   }
 
   Future<void> buscarProdutoPorEan(context, viaScanner, {double qtdDefault = 1}) async {
-    if (controllerBuscaValidador.text.length == 12 && controllerBuscaValidador.text.substring(0, 3) == '000') {
+    //if (controllerBuscaValidador.text.length == 12 && controllerBuscaValidador.text.substring(0, 3) == '000') {
+    if (controllerBuscaValidador.text.length == 12) {
       controllerBuscaValidador.text = '0${controllerBuscaValidador.text}';
     }
 
@@ -1495,7 +1793,7 @@ class _CaixaPageState extends State<CaixaPage> {
 
     Map<String, String> params = {
       'Funcao': 'ListagemProdutos',
-      'Modo': 'listar',
+      'Modo': 'listarsimples',
       'nome': controllerBuscaValidador.text,
     };
 
@@ -1546,6 +1844,7 @@ class _CaixaPageState extends State<CaixaPage> {
             final item = CupomItem(
               idProduto: produto.id,
               nome: produto.nome,
+              categoriaNome: produto.categoriaNome,
               digitado: viaScanner ? controllerBuscaValidador.text : variacao.eanSistema,
               eanSistema: variacao.eanSistema,
               eanFornecedor: variacao.eanFornecedor,
@@ -1619,6 +1918,7 @@ class _CaixaPageState extends State<CaixaPage> {
               final item = CupomItem(
                 idProduto: produto.id,
                 nome: produto.nome,
+                categoriaNome: produto.categoriaNome,
                 digitado: viaScanner ? controllerBuscaValidador.text : variacao.eanSistema,
                 eanSistema: variacao.eanSistema,
                 eanFornecedor: variacao.eanFornecedor,
@@ -1706,6 +2006,7 @@ class _CaixaPageState extends State<CaixaPage> {
         final item = CupomItem(
           idProduto: produto.id,
           nome: produto.nome,
+          categoriaNome: produto.categoriaNome,
           digitado: controllerBuscaValidador.text,
           eanSistema: variacao.eanSistema,
           eanFornecedor: variacao.eanFornecedor,
@@ -1899,16 +2200,49 @@ class _CaixaPageState extends State<CaixaPage> {
   }
 
   void selecionaAtendimento(context) {
+    if (widget.modo == CaixaModo.pedidoLoja || widget.modo == CaixaModo.pedidoZap) {
+      snackBarMsg(context, 'O atendimento não pode ser alterado !');
+      return;
+    }
+
     final List<Widget> actions = [];
 
     for (var func in listVendedores) {
+      log('imagemComissionado = ${func.imagem}');
+      String sImage = func.imagem;
       final w = CupertinoActionSheetAction(
-        child: FacileTheme.displaySmall(context, func.nome.toUpperCase()),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: (gDevice.isTabletAll ? 80 : 40),
+              height: (gDevice.isTabletAll ? 80 : 40),
+              child: ClipOval(
+                child: SizedBox.fromSize(
+                  size: Size.fromRadius(
+                    getMaxSizedImagemProfile(context),
+                  ),
+                  child: sImage.contains('svg')
+                      ? SvgPicture.network(
+                          sImage,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.network(
+                          sImage,
+                          fit: BoxFit.cover,
+                        ),
+                ),
+              ),
+            ),
+            FacileTheme.displaySmall(context, func.nome.toUpperCase()),
+          ],
+        ),
         onPressed: () async {
           Navigator.pop(context);
 
           _cupom.idFuncionarioComissionado = func.id;
           _cupom.primeiroNomeComissionado = func.nome;
+          _cupom.imagemComissionado = func.imagem;
 
           setState(() {});
         },
@@ -1924,6 +2258,7 @@ class _CaixaPageState extends State<CaixaPage> {
 
         _cupom.idFuncionarioComissionado = '0';
         _cupom.primeiroNomeComissionado = '';
+        _cupom.imagemComissionado = '';
 
         setState(() {});
       },
@@ -2079,18 +2414,26 @@ class _CaixaPageState extends State<CaixaPage> {
   Future<void> emitir(context) async {
     var origem = '';
 
-    if (gUsuario.siglaCargo == 'ven') {
-      _cupom.idFuncionarioComissionado = gUsuario.idFuncionario;
+    ///
+    /// Venda direta
+    ///
+    if (widget.modo == CaixaModo.venda) {
+      _cupom.status = CupomStatus.concluido.index.toString();
+      origem = 'appven';
+    }
+
+    ///
+    /// Pedido
+    ///
+    else {
       _cupom.status = CupomStatus.emAberto.index.toString();
+      _cupom.idFuncionarioComissionado = gUsuario.idFuncionario;
 
       if (widget.modo == CaixaModo.pedidoLoja) {
         origem = 'appped';
       } else {
         origem = 'appzap';
       }
-    } else {
-      _cupom.status = CupomStatus.concluido.index.toString();
-      origem = 'appven';
     }
 
     var jItens = [];
@@ -2132,10 +2475,16 @@ class _CaixaPageState extends State<CaixaPage> {
       });
     }
 
+    ///
+    /// Campo idPai indica a origem da venda, neste caso
+    /// um pedido deu origem a uma venda, então a venda vai marcar o pai
+    ///
+
     var jVenda = <String, dynamic>{
       'hash': getUniqueID(),
       'host': gUsuario.terminalHost,
       'idLoja': _cupom.idLojaFisica,
+      'idPai': widget.idVenda.isEmpty ? '0' : widget.idVenda,
       'idEmpresa': _cupom.idEmpresa,
       'idFuncionario': gUsuario.idFuncionario,
       'tipoMovimento': _cupom.tipoMovimento,
@@ -2151,14 +2500,14 @@ class _CaixaPageState extends State<CaixaPage> {
       'pago': _cupom.pago,
       'troco': _cupom.troco,
       'aPagar': _cupom.aPagar,
-      'comissaoTotal': _cupom.subTotal,
+      'comissaoTotal': _cupom.idFuncionarioComissionado == '0' ? '0.00' : _cupom.total - _cupom.devolucao,
       'idFuncionarioComissionado': _cupom.idFuncionarioComissionado,
       'idSugestaoMeioPagamento': _cupom.idSugestaoMeioPagamento,
       'idCliente': _cupom.idCliente,
       'itens': jItens,
       'pagtos': jPagtos,
-      'cpfCnpj': registroCliente.cpfCnpj.isNotEmpty && registroCliente.cpfCnpj.substring(0, 3) == '000' ? '' : registroCliente.cpfCnpj,
-      'celular': registroCliente.celular,
+      'cpfCnpj': _cupom.idCliente == '0' || (registroCliente.cpfCnpj.isNotEmpty && registroCliente.cpfCnpj.substring(0, 3) == '000') ? '' : registroCliente.cpfCnpj,
+      'celular': _cupom.idCliente == '0' ? '' : registroCliente.celular,
     };
 
     var j = json.encode(jVenda);
@@ -2175,24 +2524,29 @@ class _CaixaPageState extends State<CaixaPage> {
     if (aResult == null) {
     } else if (aResult != null && aResult['Status'] == 'OK') {
       _cupom.idVenda = aResult['idVenda'];
-      imprime(context);
-      // setState(() {
-      //   painelDeExpansaoPreco = false;
-      //   _cupom.limpa();6
-      // });
+      imprime(context, aResult['Msg']);
     } else {
-      facileSnackBarError(context, 'Ops!', aResult['Msg']);
+      facileSnackBarError(context, 'Ops!', aResult['Msg'], dur: 4000);
     }
   }
 
-  void imprime(context) {
+  void imprime(context, String m) {
     showCupertinoModalBottomSheet(
       backgroundColor: FacileTheme.getShadowColor(context),
       duration: getCupertinoModalBottomSheetDuration(),
       context: context,
-      builder: (context) => ImprimeCupomPage(title: 'PEDIDO ENVIADO COM SUCESSO !', idVenda: _cupom.idVenda),
+      builder: (context) => ImprimeCupomPage(title: m, idVenda: _cupom.idVenda),
     ).then(
       (value) {
+        setState(() {
+          painelDeExpansaoPreco = false;
+          _cupom.limpa();
+
+          if (widget.idVenda.isNotEmpty) {
+            Navigator.pop(context);
+          }
+        });
+
         if (value != null && value == 'ok') {}
       },
     );
@@ -2217,7 +2571,7 @@ class _CaixaPageState extends State<CaixaPage> {
             children: [
               Icon(
                 CupertinoIcons.trash,
-                color: FacileTheme.getColorHard(context),
+                color: FacileTheme.getColorPrimary(context),
               ),
               FacileTheme.displaySmall(context, "LIMPAR CUPOM"),
             ],
@@ -2237,7 +2591,7 @@ class _CaixaPageState extends State<CaixaPage> {
             children: [
               Icon(
                 CupertinoIcons.barcode,
-                color: FacileTheme.getColorHard(context),
+                color: FacileTheme.getColorPrimary(context),
               ),
               FacileTheme.displaySmall(context, "SCANNER PRODUTO"),
             ],
@@ -2254,9 +2608,33 @@ class _CaixaPageState extends State<CaixaPage> {
             children: [
               Icon(
                 Icons.percent_outlined,
-                color: FacileTheme.getColorHard(context),
+                color: FacileTheme.getColorPrimary(context),
               ),
               FacileTheme.displaySmall(context, "DESCONTO GERAL NO CUPOM"),
+            ],
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            var x = painelDeExpansaoPreco;
+            setState(() {
+              painelDeExpansaoPreco = false;
+            });
+
+            Timer(Duration(milliseconds: x ? 499 : 0), () {
+              selecionaAtendimento(context);
+            });
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.emoji_emotions_outlined,
+                color: FacileTheme.getColorPrimary(context),
+              ),
+              FacileTheme.displaySmall(context, "INFORMAR ATENDIMENTO"),
             ],
           ),
         ),
@@ -2270,8 +2648,8 @@ class _CaixaPageState extends State<CaixaPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.add_reaction_outlined,
-                color: FacileTheme.getColorHard(context),
+                Icons.person_2_outlined,
+                color: FacileTheme.getColorPrimary(context),
               ),
               FacileTheme.displaySmall(context, "INFORMAR CLIENTE"),
             ],
@@ -2281,16 +2659,20 @@ class _CaixaPageState extends State<CaixaPage> {
           isDefaultAction: true,
           onPressed: () async {
             Navigator.pop(context);
-            informarMeioPagamento(context);
+            if (widget.modo == CaixaModo.venda) {
+              pagar(context);
+            } else {
+              informarMeioPagamento(context);
+            }
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.payment_outlined,
-                color: FacileTheme.getColorHard(context),
+                color: FacileTheme.getColorPrimary(context),
               ),
-              FacileTheme.displaySmall(context, "INFORMAR MEIO DE PAGAMENTO"),
+              FacileTheme.displaySmall(context, widget.modo == CaixaModo.venda ? "PAGAR" : "INFORMAR MEIO DE PAGAMENTO"),
             ],
           ),
         ),
@@ -2305,7 +2687,7 @@ class _CaixaPageState extends State<CaixaPage> {
             children: [
               Icon(
                 CupertinoIcons.search,
-                color: FacileTheme.getColorHard(context),
+                color: FacileTheme.getColorPrimary(context),
               ),
               FacileTheme.displaySmall(context, "PESQUISAR PRODUTOS"),
             ],
@@ -2379,6 +2761,44 @@ class _CaixaPageState extends State<CaixaPage> {
     });
   }
 
+  void pagar(context) {
+    if (_cupom.itens.isEmpty) {
+      return;
+    }
+
+    try {
+      showCupertinoModalBottomSheet(
+        backgroundColor: FacileTheme.getShadowColor(context),
+        duration: getCupertinoModalBottomSheetDuration(),
+        context: context,
+        builder: (context) => PagamentoPage(cupom: _cupom),
+      ).then((value) {
+        if (value != null && value.action == 'okClick') {
+          emitir(context);
+        } else {
+          setState(() {
+            _cupom.pagtos.clear();
+            _cupom.recalcula();
+
+            if (widget.idVenda.isNotEmpty) {
+              var o = CupomPagto(
+                idMeioPagamento: _cupom.idSugestaoMeioPagamento,
+                nome: '',
+                codigoSefaz: '',
+                gerarXml: '',
+                parcelas: 0,
+                valor: _cupom.total,
+              );
+
+              _cupom.adicionaPagto(context, o);
+              _cupom.recalcula();
+            }
+          });
+        }
+      });
+    } on PlatformException {}
+  }
+
   IconData getIcon(String id) {
     if (id == '1') {
       return Icons.money;
@@ -2388,6 +2808,173 @@ class _CaixaPageState extends State<CaixaPage> {
       return CupertinoIcons.creditcard;
     }
     return Icons.credit_card;
+  }
+
+  Future<void> loadCupom(context) async {
+    if (widget.idVenda.isEmpty) {
+      return;
+    }
+
+    ///
+    /// Le os dados da venda
+    ///
+
+    Map<String, String> params = {
+      'Funcao': 'VendaLe',
+      'idVenda': widget.idVenda,
+    };
+
+    var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: false);
+
+    if (aResult == null) {
+    } else if (aResult != null && aResult['Status'] == 'OK') {
+      ///
+      /// Venda
+      ///
+      late Venda venda;
+      late List<VendaItem> vendaItens;
+
+      Iterable v = await aResult['vendas'];
+      List<Venda> listVenda = v.map((model) => Venda.fromMap(model)).toList();
+      venda = listVenda.first;
+      log(venda.toString());
+
+      ///
+      /// itens da venda
+      ///
+
+      _cupom.idPai = venda.idPai;
+      _cupom.cpfCnpj = venda.cpfCnpj;
+      _cupom.celular = venda.celular;
+      _cupom.email = venda.email;
+      _cupom.nomeCliente = venda.nomeCliente;
+      _cupom.enderecoCliente = venda.enderecoCliente;
+      _cupom.idCliente = venda.idCliente;
+      _cupom.status = venda.status;
+      _cupom.idFuncionarioComissionado = venda.idFuncionarioComissionado;
+      _cupom.primeiroNomeComissionado = venda.nomeFuncionarioComissionado;
+      _cupom.idSugestaoMeioPagamento = venda.idSugestaoMeioPagamento;
+      _cupom.nomeSugestaoMeioPagamento = venda.nomeSugestaoMeioPagamento;
+
+      ///
+      /// Cliente
+      ///
+
+      registroCliente = CadastroUnico(
+        id: venda.idCliente,
+        nome: venda.nomeCliente,
+        cpfCnpj: venda.cpfCnpj,
+        email: venda.email,
+        celular: venda.celular,
+        dataCadastro: '',
+        dataAlteracao: '',
+        f_1: '',
+        nomeSistema: '',
+        f_2: '',
+        cep: '',
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        municipio: '',
+        codigoMunicipio: '',
+        uf: '',
+        ie: '',
+        pontoReferencia: '',
+        fixo: '',
+        observacoes: '',
+        cpfCnpjF: '',
+        diaNascimento: '',
+        mesNascimento: '',
+        anoNascimento: '',
+      );
+
+      modoCliente = LeClienteModo.celular;
+
+      ///
+      /// itens da venda
+      ///
+
+      v = await aResult['vendaItens'];
+      vendaItens = v.map((model) => VendaItem.fromMap(model)).toList();
+      log(vendaItens.toString());
+
+      for (var item in vendaItens) {
+        var o = CupomItem(
+          idProduto: item.idProduto,
+          nome: item.nome,
+          categoriaNome: item.categoriaNome,
+          digitado: item.digitado,
+          eanSistema: item.eanSistema,
+          eanFornecedor: item.eanFornecedor,
+          nomeCampoVarA: item.nomeCampoVarA,
+          nomeCampoVarB: item.nomeCampoVarB,
+          nomeCampoVarC: item.nomeCampoVarC,
+          qCom: double.parse(item.qCom),
+          vUnCom: double.parse(item.vUnCom),
+          custoAtual: double.parse(item.custoAtual),
+          imagemPrincipal: item.imagemPrincipal,
+          unidadeSigla: item.nomeCampoVarA,
+          temDesconto: double.parse(item.vDesc) > 0.00,
+          atacado: false,
+          vDesc: double.parse(item.vDesc),
+          precoAplicadoIndice: '0',
+          precoAplicado: double.parse(item.precoAplicado),
+          precoTabela: double.parse(item.custoAtual),
+          precoDesconto: 0,
+          precoPromocional: 0,
+          peso: 0,
+          estoque: 0,
+        );
+        _cupom.adicionaItem(o);
+      }
+
+      _cupom.recalcula();
+
+      ///
+      /// Pagamentos, como esta carregando um pedido, faz do
+      /// pagamento somente a sugestao
+      ///
+
+      var o = CupomPagto(
+        idMeioPagamento: _cupom.idSugestaoMeioPagamento,
+        nome: '',
+        codigoSefaz: '',
+        gerarXml: '',
+        parcelas: 0,
+        valor: _cupom.total,
+      );
+
+      _cupom.adicionaPagto(context, o);
+
+      // v = await aResult['vendaPagtos'];
+      // vendaPagtos = v.map((model) => VendaPagtos.fromMap(model)).toList();
+      // log(vendaPagtos.toString());
+
+      // for (var item in vendaPagtos) {
+      //   var o = CupomPagto(
+      //     codigoSefaz: '',
+      //     idMeioPagamento: '',
+      //     gerarXml: '',
+      //     nome: '',
+      //     parcelas: 0,
+      //     valor: 0,
+      //   );
+      //   _cupom.adicionaPagto(context, o);
+      // }
+
+      ///
+      /// Fim e entra no modo de pagamento somente
+      ///
+
+      _cupom.recalcula();
+
+      if (mounted) {
+        setState(() {});
+      }
+    } else {
+      facileSnackBarError(context, 'Ops!', aResult['Msg']);
+    }
   }
 
   ///

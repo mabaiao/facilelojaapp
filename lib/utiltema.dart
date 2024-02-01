@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class FacileTheme {
   Color defaultColorLight = Colors.white;
-  Color defaultColorDark = const Color.fromARGB(255, 2, 2, 1);
+  Color defaultColorDark = const Color.fromARGB(255, 0, 1, 20);
 
   List<Color> colorArray = [
     Colors.blue,
@@ -273,7 +273,7 @@ class FacileTheme {
     bool invert = false,
     disable = false,
     align = TextAlign.center,
-    fontSize = 0,
+    double fontSize = 0,
   }) {
     return Text(
       title,
@@ -297,7 +297,7 @@ class FacileTheme {
     disable = false,
     bold = false,
     align = TextAlign.center,
-    fontSize = 0,
+    double fontSize = 0,
   }) {
     return Text(
       title,
@@ -320,8 +320,9 @@ class FacileTheme {
     bool invert = false,
     disable = false,
     bold = false,
+    hard = false,
     align = TextAlign.center,
-    fontSize = 0,
+    double fontSize = 0,
   }) {
     return Text(
       title,
@@ -333,7 +334,9 @@ class FacileTheme {
             ? Colors.white
             : disable
                 ? Colors.grey
-                : Theme.of(context).textTheme.displaySmall?.color!.withOpacity(1),
+                : hard
+                    ? FacileTheme.getColorPrimary(context)
+                    : Theme.of(context).textTheme.displaySmall?.color!.withOpacity(1),
       ),
     );
   }
@@ -345,7 +348,7 @@ class FacileTheme {
     disable = false,
     bold = false,
     align = TextAlign.center,
-    fontSize = 0,
+    double fontSize = 0,
   }) {
     return Text(
       title,
@@ -399,6 +402,6 @@ class FacileTheme {
   }
 
   static Color getShadowColor(context) {
-    return (gTema.modo == 'dark' ? gTema.defaultColorDark : Colors.grey);
+    return (gTema.modo == 'dark' ? gTema.defaultColorDark : const Color.fromARGB(255, 223, 220, 220));
   }
 }

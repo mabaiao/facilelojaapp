@@ -183,9 +183,15 @@ class _RegistroState extends State<RegistroPage> {
       gUsuario.terminalNome = aResult['terminalNome'];
       gUsuario.host = host;
       gUsuario.update();
-      Navigator.pop(context);
 
-      facileSnackBarSucess(context, 'Show!', aResult['Msg']);
+      facileSnackBarSucess(
+        context,
+        'Show!',
+        aResult['Msg'],
+        onThen: () {
+          Navigator.pop(context);
+        },
+      );
     } else {
       facileSnackBarError(context, 'Ops!', aResult['Msg']);
     }

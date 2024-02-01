@@ -36,6 +36,8 @@ class VendaItem {
   String precoAplicadoDescricao;
   String precoAplicado;
   String idFuncionarioComissionado;
+  String imagemPrincipal;
+  String categoriaNome;
   VendaItem({
     required this.id,
     required this.hash,
@@ -71,6 +73,8 @@ class VendaItem {
     required this.precoAplicadoDescricao,
     required this.precoAplicado,
     required this.idFuncionarioComissionado,
+    required this.imagemPrincipal,
+    required this.categoriaNome,
   });
 
   VendaItem copyWith({
@@ -108,6 +112,8 @@ class VendaItem {
     String? precoAplicadoDescricao,
     String? precoAplicado,
     String? idFuncionarioComissionado,
+    String? imagemPrincipal,
+    String? categoriaNome,
   }) {
     return VendaItem(
       id: id ?? this.id,
@@ -144,6 +150,8 @@ class VendaItem {
       precoAplicadoDescricao: precoAplicadoDescricao ?? this.precoAplicadoDescricao,
       precoAplicado: precoAplicado ?? this.precoAplicado,
       idFuncionarioComissionado: idFuncionarioComissionado ?? this.idFuncionarioComissionado,
+      imagemPrincipal: imagemPrincipal ?? this.imagemPrincipal,
+      categoriaNome: categoriaNome ?? this.categoriaNome,
     );
   }
 
@@ -183,6 +191,8 @@ class VendaItem {
       'precoAplicadoDescricao': precoAplicadoDescricao,
       'precoAplicado': precoAplicado,
       'idFuncionarioComissionado': idFuncionarioComissionado,
+      'imagemPrincipal': imagemPrincipal,
+      'categoriaNome': categoriaNome,
     };
   }
 
@@ -222,6 +232,8 @@ class VendaItem {
       precoAplicadoDescricao: map['precoAplicadoDescricao'] as String,
       precoAplicado: map['precoAplicado'] as String,
       idFuncionarioComissionado: map['idFuncionarioComissionado'] as String,
+      imagemPrincipal: map['imagemPrincipal'] as String,
+      categoriaNome: map['categoriaNome'] as String,
     );
   }
 
@@ -231,7 +243,7 @@ class VendaItem {
 
   @override
   String toString() {
-    return 'VendaItem(id: $id, hash: $hash, dataCadastro: $dataCadastro, dataAlteracao: $dataAlteracao, idVenda: $idVenda, idLoja: $idLoja, idEmpresa: $idEmpresa, idFuncionario: $idFuncionario, tipoMovimento: $tipoMovimento, origem: $origem, status: $status, f_1: $f_1, idProduto: $idProduto, digitado: $digitado, eanSistema: $eanSistema, eanFornecedor: $eanFornecedor, nomeCampoVarA: $nomeCampoVarA, nomeCampoVarB: $nomeCampoVarB, nomeCampoVarC: $nomeCampoVarC, f_2: $f_2, qCom: $qCom, vUnCom: $vUnCom, vDesc: $vDesc, vAcre: $vAcre, vSubTotal: $vSubTotal, vTotal: $vTotal, nome: $nome, unidadeSigla: $unidadeSigla, custoAtual: $custoAtual, peso: $peso, precoAplicadoIndice: $precoAplicadoIndice, precoAplicadoDescricao: $precoAplicadoDescricao, precoAplicado: $precoAplicado, idFuncionarioComissionado: $idFuncionarioComissionado)';
+    return 'VendaItem(id: $id, hash: $hash, dataCadastro: $dataCadastro, dataAlteracao: $dataAlteracao, idVenda: $idVenda, idLoja: $idLoja, idEmpresa: $idEmpresa, idFuncionario: $idFuncionario, tipoMovimento: $tipoMovimento, origem: $origem, status: $status, f_1: $f_1, idProduto: $idProduto, digitado: $digitado, eanSistema: $eanSistema, eanFornecedor: $eanFornecedor, nomeCampoVarA: $nomeCampoVarA, nomeCampoVarB: $nomeCampoVarB, nomeCampoVarC: $nomeCampoVarC, f_2: $f_2, qCom: $qCom, vUnCom: $vUnCom, vDesc: $vDesc, vAcre: $vAcre, vSubTotal: $vSubTotal, vTotal: $vTotal, nome: $nome, unidadeSigla: $unidadeSigla, custoAtual: $custoAtual, peso: $peso, precoAplicadoIndice: $precoAplicadoIndice, precoAplicadoDescricao: $precoAplicadoDescricao, precoAplicado: $precoAplicado, idFuncionarioComissionado: $idFuncionarioComissionado, imagemPrincipal: $imagemPrincipal, categoriaNome: $categoriaNome)';
   }
 
   @override
@@ -271,7 +283,9 @@ class VendaItem {
         other.precoAplicadoIndice == precoAplicadoIndice &&
         other.precoAplicadoDescricao == precoAplicadoDescricao &&
         other.precoAplicado == precoAplicado &&
-        other.idFuncionarioComissionado == idFuncionarioComissionado;
+        other.idFuncionarioComissionado == idFuncionarioComissionado &&
+        other.imagemPrincipal == imagemPrincipal &&
+        other.categoriaNome == categoriaNome;
   }
 
   @override
@@ -309,6 +323,8 @@ class VendaItem {
         precoAplicadoIndice.hashCode ^
         precoAplicadoDescricao.hashCode ^
         precoAplicado.hashCode ^
-        idFuncionarioComissionado.hashCode;
+        idFuncionarioComissionado.hashCode ^
+        imagemPrincipal.hashCode ^
+        categoriaNome.hashCode;
   }
 }

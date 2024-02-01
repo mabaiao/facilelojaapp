@@ -73,6 +73,7 @@ class _ProdutosImagensState extends State<ProdutosImagens> {
     if (aResult == null) {
     } else if (aResult != null && aResult['Status'] == 'OK') {
       String imagens = aResult['registro']['jsonImagens'];
+      widget.produto.variacoes = jsonEncode(aResult['registro']['variacoes']);
 
       if (imagens.isNotEmpty) {
         Iterable lp = jsonDecode(imagens);
@@ -118,59 +119,61 @@ class _ProdutosImagensState extends State<ProdutosImagens> {
       ),
     );
 
-    listFloatingActionButton.add(
-      FormFloatingActionButton(
-          icon: Icons.add_a_photo_outlined,
-          caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Adicionar', 'F1'),
-          onTap: () {
-            final action = CupertinoActionSheet(
-              title: FacileTheme.headlineSmall(context, 'CARREGAR IMAGEM'),
-              actions: <Widget>[
-                CupertinoActionSheetAction(
-                  isDefaultAction: true,
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    getImageFromDevice(context, ImageSource.camera);
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.camera_alt_outlined,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      FacileTheme.displaySmall(context, "CÂMERA"),
-                    ],
+    if (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'cad' || gUsuario.siglaCargo == 'ger') {
+      listFloatingActionButton.add(
+        FormFloatingActionButton(
+            icon: Icons.add_a_photo_outlined,
+            caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Adicionar', 'F1'),
+            onTap: () {
+              final action = CupertinoActionSheet(
+                title: FacileTheme.headlineSmall(context, 'CARREGAR IMAGEM'),
+                actions: <Widget>[
+                  CupertinoActionSheetAction(
+                    isDefaultAction: true,
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      getImageFromDevice(context, ImageSource.camera);
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.camera_alt_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        FacileTheme.displaySmall(context, "CÂMERA"),
+                      ],
+                    ),
                   ),
-                ),
-                CupertinoActionSheetAction(
-                  isDefaultAction: false,
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    getImageFromDevice(context, ImageSource.gallery);
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.collections_bookmark_outlined,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      FacileTheme.displaySmall(context, "GALERIA"),
-                    ],
+                  CupertinoActionSheetAction(
+                    isDefaultAction: false,
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      getImageFromDevice(context, ImageSource.gallery);
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.collections_bookmark_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        FacileTheme.displaySmall(context, "GALERIA"),
+                      ],
+                    ),
                   ),
+                ],
+                cancelButton: CupertinoActionSheetAction(
+                  child: FacileTheme.displaySmall(context, 'CANCELA'),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
                 ),
-              ],
-              cancelButton: CupertinoActionSheetAction(
-                child: FacileTheme.displaySmall(context, 'CANCELA'),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
-            );
-            showCupertinoModalPopup(context: context, builder: (context) => action);
-          }),
-    );
+              );
+              showCupertinoModalPopup(context: context, builder: (context) => action);
+            }),
+      );
+    }
 
     int iPage = 0;
     int ind = 0;

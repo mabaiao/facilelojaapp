@@ -22,8 +22,9 @@ class LeValorPage extends StatefulWidget {
   final String title;
   final LeValorModo modo;
   final double limite;
+  final String valorInicial;
 
-  const LeValorPage({super.key, required this.title, required this.modo, required this.limite});
+  const LeValorPage({super.key, required this.title, required this.modo, required this.limite, this.valorInicial = ''});
 
   @override
   State<LeValorPage> createState() => _LeValorState();
@@ -67,12 +68,13 @@ class _LeValorState extends State<LeValorPage> {
     var s = event.logicalKey.keyLabel.toString().replaceAll('Numpad ', '').replaceAll('Digit ', '').replaceAll('Key ', '').replaceAll('Space', ' ');
 
     if (event.runtimeType == RawKeyDownEvent) {
-      debugPrint('RegistroPage::onFocusKey::$s');
+      debugPrint('LeValor::onFocusKey::$s');
 
       if (s == 'Escape') {
         Navigator.pop(context);
       } else if (s == 'C') {
-        iniciaValor(context);
+        senha = '';
+        setState(() {});
       } else if (s == 'Enter') {
         retornarValor(context);
       } else if ('1234567890'.contains(s)) {
@@ -91,7 +93,7 @@ class _LeValorState extends State<LeValorPage> {
 
     List<Widget> w1 = [
       FacileTheme.headlineMedium(context, widget.title),
-      FacileTheme.displayMedium(context, 'Limite em ${format.format(widget.limite)} ${widget.modo == LeValorModo.percentual ? "%" : ""}'),
+      widget.limite == 0 ? const SizedBox() : FacileTheme.displayMedium(context, 'Limite em ${format.format(widget.limite)} ${widget.modo == LeValorModo.percentual ? "%" : ""}'),
       SizedBox(
         height: getMaxSizedBoxLottieHeight(context),
         child: svg.isEmpty
@@ -203,6 +205,8 @@ class _LeValorState extends State<LeValorPage> {
           backgroundColor: FacileTheme.getColorPrimary(context),
         ),
         onPressed: () {
+          gDevice.beep();
+
           retornarValor(context);
         },
       );
@@ -218,7 +222,7 @@ class _LeValorState extends State<LeValorPage> {
             senha += caption;
           }
         } else if (widget.modo == LeValorModo.monetario) {
-          if (senha.length < 15) {
+          if (senha.length < 6) {
             senha += caption;
           }
         }
@@ -254,7 +258,7 @@ class _LeValorState extends State<LeValorPage> {
     double value = double.parse(result);
 
     if (widget.modo == LeValorModo.percentual || widget.modo == LeValorModo.monetario) {
-      if (value > widget.limite) {
+      if (widget.limite > 0 && value > widget.limite) {
         value = widget.limite;
         senha = value.toStringAsFixed(2).replaceAll('.', '');
       }
@@ -271,7 +275,8 @@ class _LeValorState extends State<LeValorPage> {
   }
 
   void iniciaValor(context) {
-    senha = '';
+    senha = widget.valorInicial;
+
     if (widget.modo == LeValorModo.percentual) {
       format = NumberFormat('##0.00', 'pt_BR');
     } else if (widget.modo == LeValorModo.monetario) {

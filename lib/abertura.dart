@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:async';
-import 'package:facilelojaapp/configuraimpressoraex.dart';
 import 'package:facilelojaapp/menu.dart';
 import 'package:facilelojaapp/utilpost.dart';
 import 'package:facilelojaapp/logon.dart';
@@ -46,7 +45,7 @@ class _IniciaPageState extends State<IniciaPage> {
       });
     });
 
-    Timer(const Duration(milliseconds: 4001), () {
+    Timer(const Duration(milliseconds: 2001), () {
       Navigator.push(
         context,
         CupertinoPageRoute(
@@ -62,7 +61,7 @@ class _IniciaPageState extends State<IniciaPage> {
       backgroundColor: gTema.modo == 'dark' ? gTema.defaultColorDark : gTema.defaultColorLight,
       body: Center(
         child: !isLoad
-            ? null
+            ? const SizedBox()
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -107,7 +106,7 @@ class _AberturaState extends State<AberturaPage> {
   }
 
   void load(context) async {
-    Timer(const Duration(milliseconds: 1500), () async {
+    Timer(const Duration(milliseconds: 750), () async {
       bg = getBackground(context);
       svg = await getFileData('imagens/abertura.svg');
       setState(() {
@@ -128,17 +127,17 @@ class _AberturaState extends State<AberturaPage> {
     );
   }
 
-  void conf() {
-    showCupertinoModalBottomSheet(
-      duration: getCupertinoModalBottomSheetDuration(),
-      context: context,
-      builder: (context) => const ConfiguraImpressoraExPage(),
-    ).then(
-      (value) {
-        setState(() {});
-      },
-    );
-  }
+  // void conf() {
+  //   showCupertinoModalBottomSheet(
+  //     duration: getCupertinoModalBottomSheetDuration(),
+  //     context: context,
+  //     builder: (context) => const ConfiguraImpressoraExPage(),
+  //   ).then(
+  //     (value) {
+  //       setState(() {});
+  //     },
+  //   );
+  // }
 
   void entrarPage() async {
     showCupertinoModalBottomSheet(
@@ -148,7 +147,6 @@ class _AberturaState extends State<AberturaPage> {
       builder: (context) => const LogonPage(),
     ).then(
       (value) {
-        debugPrint('AberturaPage::$value');
         if (value != null && value == 'ok') {
           Timer(const Duration(milliseconds: 800), () {
             Navigator.push(
@@ -233,23 +231,24 @@ class _AberturaState extends State<AberturaPage> {
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FacileTheme.headlineMedium(context, 'Aplicativo de vendas'),
+          FacileTheme.headlineMedium(context, 'Aplicativo de vendas ${gUrlPost.versaoApp}'),
         ],
       ),
+      FacileTheme.headlineSmall(context, gUrlPost.nomeVersaoApp, fontSize: 12),
       FacileTheme.displaySmall(
         context,
-        (gUsuario.subdominio.isEmpty ? 'Terminal não registrado' : 'Terminal ${gUsuario.host} registrado para ${gUsuario.subdominio.toUpperCase()}'),
+        (gUsuario.subdominio.isEmpty ? 'Terminal não registrado' : 'Dispositivo ${gUsuario.host} registrado para ${gUsuario.subdominio.toUpperCase()}'),
       ),
       (gUsuario.subdominio.isEmpty
           ? const SizedBox()
           : TextButtonEx(
-              caption: 'Descadastrar este aparelho',
+              caption: 'Descadastrar este dispositivo',
               //style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(1)),
               onPressed: () {
                 showSimNao(
                   context,
                   'Aviso',
-                  'Este aparelho será desconectado do sistema, confirma ?',
+                  'Este dispositivo será desconectado do sistema, confirma ?',
                   () {
                     Navigator.pop(context);
                     descadastrar(context);
@@ -291,7 +290,7 @@ class _AberturaState extends State<AberturaPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: getMaxSizedBoxLottieHeight(context) * .3,
+                    width: getMaxSizedBoxLottieHeight(context),
                     child: Lottie.asset(
                       'imagens/loading.json',
                       fit: BoxFit.contain,
@@ -334,6 +333,8 @@ class _AberturaState extends State<AberturaPage> {
     var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: true, addParam: true);
 
     if (aResult == null) {
+      gUsuario.clear();
+      setState(() {});
     } else if (aResult != null && aResult['Status'] == 'OK') {
       gUsuario.clear();
       facileSnackBarSucess(context, 'Show!', aResult['Msg']);

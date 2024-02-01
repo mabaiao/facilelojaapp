@@ -48,8 +48,8 @@ double getMaxSizedBoxLottieHeight(context) {
       (gDevice.isWindows || gDevice.isTabletLandscape
           ? 0.6
           : gDevice.isPhoneSmall
-              ? 0.25
-              : 0.30);
+              ? 0.24
+              : 0.28);
 
   if (gDevice.isTabletPortrait) {
     v = MediaQuery.of(context).size.height * 0.3;
@@ -217,7 +217,7 @@ showAlertError(
   BuildContext context,
   String caption,
   String msg, {
-  sOK = 'OK',
+  sOK = 'FECHAR',
   VoidCallback? onThen,
   dur = 3000,
 }) {
@@ -239,11 +239,16 @@ showAlertError(
   showDialog(
     context: context,
     builder: (BuildContext context) {
-      Timer(Duration(milliseconds: dur), () {
-        if (context.mounted) {
-          Navigator.pop(context);
-        }
-      });
+      ///
+      /// Decidi deixar sem fechar automaticamento para que o usuario possa
+      /// copiar a tela
+      ///
+
+      // Timer(Duration(milliseconds: dur), () {
+      //   if (context.mounted) {
+      //     Navigator.pop(context);
+      //   }
+      // });
 
       return alert;
     },
@@ -1403,7 +1408,7 @@ Widget getSlogan(context, {double proporcao = 1, String title = ''}) {
       borderType: BorderType.Rect,
       strokeWidth: 2,
       padding: const EdgeInsets.all(5),
-      color: (gTema.modo == 'dark' ? Colors.white : Colors.black),
+      color: (gTema.modo == 'dark' ? Colors.white : Colors.white),
       dashPattern: const [6, 6],
       child: Container(
         height: 75 * proporcao,
@@ -1417,7 +1422,7 @@ Widget getSlogan(context, {double proporcao = 1, String title = ''}) {
             Text(
               title,
               style: GoogleFonts.anton(
-                fontSize: 50 * proporcao,
+                fontSize: 40 * proporcao,
                 color: Colors.black,
               ),
             ),

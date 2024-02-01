@@ -40,7 +40,8 @@ class Venda {
   String f_3;
   String comissaoTotal;
   String idFuncionarioComissionado;
-  String f_4;
+  String idSugestaoMeioPagamento;
+  String nomeSugestaoMeioPagamento;
   String idVendaFiscal;
   String nomeFuncionarioComissionado;
   String temPix;
@@ -52,6 +53,7 @@ class Venda {
   String enderecoCliente;
   String nomeFuncionarioOperador;
   String nomeCargoFuncionarioOperador;
+  String imagemFuncionarioComissionado;
   Venda({
     required this.id,
     required this.hash,
@@ -91,7 +93,8 @@ class Venda {
     required this.f_3,
     required this.comissaoTotal,
     required this.idFuncionarioComissionado,
-    required this.f_4,
+    required this.idSugestaoMeioPagamento,
+    required this.nomeSugestaoMeioPagamento,
     required this.idVendaFiscal,
     required this.nomeFuncionarioComissionado,
     required this.temPix,
@@ -103,6 +106,7 @@ class Venda {
     required this.enderecoCliente,
     required this.nomeFuncionarioOperador,
     required this.nomeCargoFuncionarioOperador,
+    required this.imagemFuncionarioComissionado,
   });
 
   Venda copyWith({
@@ -144,7 +148,8 @@ class Venda {
     String? f_3,
     String? comissaoTotal,
     String? idFuncionarioComissionado,
-    String? f_4,
+    String? idSugestaoMeioPagamento,
+    String? nomeSugestaoMeioPagamento,
     String? idVendaFiscal,
     String? nomeFuncionarioComissionado,
     String? temPix,
@@ -156,6 +161,7 @@ class Venda {
     String? enderecoCliente,
     String? nomeFuncionarioOperador,
     String? nomeCargoFuncionarioOperador,
+    String? imagemFuncionarioComissionado,
   }) {
     return Venda(
       id: id ?? this.id,
@@ -196,7 +202,8 @@ class Venda {
       f_3: f_3 ?? this.f_3,
       comissaoTotal: comissaoTotal ?? this.comissaoTotal,
       idFuncionarioComissionado: idFuncionarioComissionado ?? this.idFuncionarioComissionado,
-      f_4: f_4 ?? this.f_4,
+      idSugestaoMeioPagamento: idSugestaoMeioPagamento ?? this.idSugestaoMeioPagamento,
+      nomeSugestaoMeioPagamento: nomeSugestaoMeioPagamento ?? this.nomeSugestaoMeioPagamento,
       idVendaFiscal: idVendaFiscal ?? this.idVendaFiscal,
       nomeFuncionarioComissionado: nomeFuncionarioComissionado ?? this.nomeFuncionarioComissionado,
       temPix: temPix ?? this.temPix,
@@ -208,6 +215,7 @@ class Venda {
       enderecoCliente: enderecoCliente ?? this.enderecoCliente,
       nomeFuncionarioOperador: nomeFuncionarioOperador ?? this.nomeFuncionarioOperador,
       nomeCargoFuncionarioOperador: nomeCargoFuncionarioOperador ?? this.nomeCargoFuncionarioOperador,
+      imagemFuncionarioComissionado: imagemFuncionarioComissionado ?? this.imagemFuncionarioComissionado,
     );
   }
 
@@ -251,7 +259,8 @@ class Venda {
       'f_3': f_3,
       'comissaoTotal': comissaoTotal,
       'idFuncionarioComissionado': idFuncionarioComissionado,
-      'f_4': f_4,
+      'idSugestaoMeioPagamento': idSugestaoMeioPagamento,
+      'nomeSugestaoMeioPagamento': nomeSugestaoMeioPagamento,
       'idVendaFiscal': idVendaFiscal,
       'nomeFuncionarioComissionado': nomeFuncionarioComissionado,
       'temPix': temPix,
@@ -263,6 +272,7 @@ class Venda {
       'enderecoCliente': enderecoCliente,
       'nomeFuncionarioOperador': nomeFuncionarioOperador,
       'nomeCargoFuncionarioOperador': nomeCargoFuncionarioOperador,
+      'imagemFuncionarioComissionado': imagemFuncionarioComissionado,
     };
   }
 
@@ -306,7 +316,8 @@ class Venda {
       f_3: map['f_3'] as String,
       comissaoTotal: map['comissaoTotal'] as String,
       idFuncionarioComissionado: map['idFuncionarioComissionado'] as String,
-      f_4: map['f_4'] as String,
+      idSugestaoMeioPagamento: map['idSugestaoMeioPagamento'] as String,
+      nomeSugestaoMeioPagamento: map['nomeSugestaoMeioPagamento'] as String,
       idVendaFiscal: map['idVendaFiscal'] as String,
       nomeFuncionarioComissionado: map['nomeFuncionarioComissionado'] as String,
       temPix: map['temPix'] as String,
@@ -318,6 +329,7 @@ class Venda {
       enderecoCliente: map['enderecoCliente'] as String,
       nomeFuncionarioOperador: map['nomeFuncionarioOperador'] as String,
       nomeCargoFuncionarioOperador: map['nomeCargoFuncionarioOperador'] as String,
+      imagemFuncionarioComissionado: map['imagemFuncionarioComissionado'] as String,
     );
   }
 
@@ -327,7 +339,7 @@ class Venda {
 
   @override
   String toString() {
-    return 'Venda(id: $id, hash: $hash, host: $host, dataCadastro: $dataCadastro, dataCadastroF: $dataCadastroF, horaCadastroF: $horaCadastroF, dataAlteracao: $dataAlteracao, dataAlteracaoF: $dataAlteracaoF, horaAlteracaoF: $horaAlteracaoF, idVenda: $idVenda, idPai: $idPai, idLoja: $idLoja, idEmpresa: $idEmpresa, idFuncionario: $idFuncionario, tipoMovimento: $tipoMovimento, origem: $origem, status: $status, f_1: $f_1, descricao: $descricao, cpfCnpj: $cpfCnpj, celular: $celular, email: $email, mesa: $mesa, idCliente: $idCliente, f_2: $f_2, acrescimo: $acrescimo, desconto: $desconto, devolucao: $devolucao, subTotal: $subTotal, total: $total, pagoDinheiro: $pagoDinheiro, pagoOutros: $pagoOutros, pago: $pago, troco: $troco, aPagar: $aPagar, f_3: $f_3, comissaoTotal: $comissaoTotal, idFuncionarioComissionado: $idFuncionarioComissionado, f_4: $f_4, idVendaFiscal: $idVendaFiscal, nomeFuncionarioComissionado: $nomeFuncionarioComissionado, temPix: $temPix, temDinheiro: $temDinheiro, temCartao: $temCartao, serie: $serie, numero: $numero, nomeCliente: $nomeCliente, enderecoCliente: $enderecoCliente, nomeFuncionarioOperador: $nomeFuncionarioOperador, nomeCargoFuncionarioOperador: $nomeCargoFuncionarioOperador)';
+    return 'Venda(id: $id, hash: $hash, host: $host, dataCadastro: $dataCadastro, dataCadastroF: $dataCadastroF, horaCadastroF: $horaCadastroF, dataAlteracao: $dataAlteracao, dataAlteracaoF: $dataAlteracaoF, horaAlteracaoF: $horaAlteracaoF, idVenda: $idVenda, idPai: $idPai, idLoja: $idLoja, idEmpresa: $idEmpresa, idFuncionario: $idFuncionario, tipoMovimento: $tipoMovimento, origem: $origem, status: $status, f_1: $f_1, descricao: $descricao, cpfCnpj: $cpfCnpj, celular: $celular, email: $email, mesa: $mesa, idCliente: $idCliente, f_2: $f_2, acrescimo: $acrescimo, desconto: $desconto, devolucao: $devolucao, subTotal: $subTotal, total: $total, pagoDinheiro: $pagoDinheiro, pagoOutros: $pagoOutros, pago: $pago, troco: $troco, aPagar: $aPagar, f_3: $f_3, comissaoTotal: $comissaoTotal, idFuncionarioComissionado: $idFuncionarioComissionado, idSugestaoMeioPagamento: $idSugestaoMeioPagamento, nomeSugestaoMeioPagamento: $nomeSugestaoMeioPagamento, idVendaFiscal: $idVendaFiscal, nomeFuncionarioComissionado: $nomeFuncionarioComissionado, temPix: $temPix, temDinheiro: $temDinheiro, temCartao: $temCartao, serie: $serie, numero: $numero, nomeCliente: $nomeCliente, enderecoCliente: $enderecoCliente, nomeFuncionarioOperador: $nomeFuncionarioOperador, nomeCargoFuncionarioOperador: $nomeCargoFuncionarioOperador, imagemFuncionarioComissionado: $imagemFuncionarioComissionado)';
   }
 
   @override
@@ -372,7 +384,8 @@ class Venda {
         other.f_3 == f_3 &&
         other.comissaoTotal == comissaoTotal &&
         other.idFuncionarioComissionado == idFuncionarioComissionado &&
-        other.f_4 == f_4 &&
+        other.idSugestaoMeioPagamento == idSugestaoMeioPagamento &&
+        other.nomeSugestaoMeioPagamento == nomeSugestaoMeioPagamento &&
         other.idVendaFiscal == idVendaFiscal &&
         other.nomeFuncionarioComissionado == nomeFuncionarioComissionado &&
         other.temPix == temPix &&
@@ -383,7 +396,8 @@ class Venda {
         other.nomeCliente == nomeCliente &&
         other.enderecoCliente == enderecoCliente &&
         other.nomeFuncionarioOperador == nomeFuncionarioOperador &&
-        other.nomeCargoFuncionarioOperador == nomeCargoFuncionarioOperador;
+        other.nomeCargoFuncionarioOperador == nomeCargoFuncionarioOperador &&
+        other.imagemFuncionarioComissionado == imagemFuncionarioComissionado;
   }
 
   @override
@@ -426,7 +440,8 @@ class Venda {
         f_3.hashCode ^
         comissaoTotal.hashCode ^
         idFuncionarioComissionado.hashCode ^
-        f_4.hashCode ^
+        idSugestaoMeioPagamento.hashCode ^
+        nomeSugestaoMeioPagamento.hashCode ^
         idVendaFiscal.hashCode ^
         nomeFuncionarioComissionado.hashCode ^
         temPix.hashCode ^
@@ -437,6 +452,7 @@ class Venda {
         nomeCliente.hashCode ^
         enderecoCliente.hashCode ^
         nomeFuncionarioOperador.hashCode ^
-        nomeCargoFuncionarioOperador.hashCode;
+        nomeCargoFuncionarioOperador.hashCode ^
+        imagemFuncionarioComissionado.hashCode;
   }
 }

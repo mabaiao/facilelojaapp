@@ -1,9 +1,13 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
+import 'package:facilelojaapp/utiltema.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/widgets.dart';
@@ -12,6 +16,7 @@ import 'package:printing/printing.dart';
 import 'dados/empresa.dart';
 import 'dados/venda.dart';
 import 'main.dart';
+import 'util.dart';
 
 /// **************************
 /// Cupom
@@ -44,6 +49,7 @@ class Cupom {
   String idPai = '0';
   String idFuncionarioComissionado = '0';
   String primeiroNomeComissionado = '';
+  String imagemComissionado = '';
   double qtdProdutos = 0;
   String cpfCnpj = '';
   String celular = '';
@@ -84,6 +90,8 @@ class Cupom {
   String idSugestaoMeioPagamento = '0';
   String nomeSugestaoMeioPagamento = '';
 
+  bool temParcelado = false;
+
   late List<CupomItem> itens = [];
   late List<CupomPagto> pagtos = [];
 
@@ -117,6 +125,7 @@ class Cupom {
     idPai = '0';
     idFuncionarioComissionado = '0';
     primeiroNomeComissionado = '';
+    imagemComissionado = '';
 
     status = CupomStatus.emAberto.toString();
     atacado = 'N';
@@ -158,6 +167,8 @@ class Cupom {
 
     idSugestaoMeioPagamento = '0';
     nomeSugestaoMeioPagamento = '';
+
+    temParcelado = false;
 
     itens.clear();
     pagtos.clear();
@@ -423,6 +434,8 @@ class Cupom {
       pagoDinheiro = 0;
       pagoOutros = 0;
 
+      temParcelado = false;
+
       for (var i = 0; i < pagtos.length; i++) {
         pago += pagtos[i].valor;
 
@@ -430,6 +443,10 @@ class Cupom {
           pagoDinheiro += pagtos[i].valor;
         } else {
           pagoOutros += pagtos[i].valor;
+        }
+
+        if (pagtos[i].parcelas > 0) {
+          temParcelado = true;
         }
       }
 
@@ -463,22 +480,28 @@ class Cupom {
     totalF = total == 0.00 ? '-' : format.format(total);
   }
 
-  void impressaoCupom(context, Empresa empresa, Venda venda, opcoesImpressao, String modo) async {
+  ///
+  /// Parametro formato controla estilo do cupom, geralmente para compartilhar
+  ///
+  /// Valor: 'estilo'
+  ///
+
+  Future<Uint8List> impressaoCupom(context, Empresa empresa, Venda venda, opcoesImpressao, String modo, {String formato = '', String noFont = '1'}) async {
     var subdominio = gUsuario.subdominio;
-    var cupom = this;
+    Cupom cupom = this;
 
     final doc = pw.Document();
-    final fontDetalhe = await PdfGoogleFonts.ubuntuMonoRegular();
-    final fontTitulo = await PdfGoogleFonts.staatlichesRegular();
+    var fontDetalhe = await PdfGoogleFonts.ubuntuMonoRegular();
+    var fontTitulo = await PdfGoogleFonts.staatlichesRegular();
     final fontCancelado = await PdfGoogleFonts.rubikMonoOneRegular();
     final consumidor = cupom.cpfCnpj.isEmpty ? 'CONSUMIDOR NÃO IDENTIFICADO' : 'CONSUMIDOR FINAL ${cupom.cpfCnpj}';
     //final netImage = await networkImage(empresa.logo);
     const temFiscal = 'N';
 
+    var impressaoTamanhoFonteTitulo = double.parse(opcoesImpressao['_impressaoTamanhoFonteTitulo']);
     final impressaoTamanhoFonteTexto = double.parse(opcoesImpressao['_impressaoTamanhoFonteTexto']);
     final impressaoTamanhoFonteProduto = double.parse(opcoesImpressao['_impressaoTamanhoFonteProduto']);
     final impressaoTamanhoFonteProdutoValores = double.parse(opcoesImpressao['_impressaoTamanhoFonteProdutoValores']);
-    final impressaoTamanhoFonteTitulo = double.parse(opcoesImpressao['_impressaoTamanhoFonteTitulo']);
     final impressaoTamanhoFonteSubTitulo = double.parse(opcoesImpressao['_impressaoTamanhoFonteSubTitulo']);
     final impressaoTamanhoFonteTotais = double.parse(opcoesImpressao['_impressaoTamanhoFonteTotais']);
     final impressaoTamanhoPapel = opcoesImpressao['_impressaoTamanhoPapel'];
@@ -490,7 +513,13 @@ class Cupom {
     final String impressaoTelefoneCelular = opcoesImpressao['_impressaoTelefoneCelular'].toString();
     final String impressaoTelefoneFixo = opcoesImpressao['_impressaoTelefoneFixo'].toString();
 
-//    showLoading(context);
+    if (formato == 'estilo') {
+      impressaoTamanhoFonteTitulo++;
+      impressaoTamanhoFonteTitulo++;
+
+      fontDetalhe = await getFont(noFont);
+      fontTitulo = await getFont(noFont);
+    }
 
     ///
     /// Parte fiscal
@@ -542,7 +571,7 @@ class Cupom {
     }
 
     if ((impressaoTelefonePadrao == 'Fixo' || impressaoTelefonePadrao == 'Ambos') && impressaoTelefoneFixo.isNotEmpty) {
-      sContato += (' $impressaoTelefoneCelular');
+      sContato += (' $impressaoTelefoneFixo');
     }
 
     if (sContato.isNotEmpty) {
@@ -555,7 +584,7 @@ class Cupom {
 
     pw.Widget wCancelado = pw.SizedBox();
 
-    if (cupom.status == '2') {
+    if (cupom.status == '3') {
       wCancelado = pw.Column(
         children: [
           pw.Text(
@@ -600,7 +629,10 @@ class Cupom {
       wRodape = pw.Column(
         mainAxisAlignment: pw.MainAxisAlignment.center,
         children: [
-          pw.Text(impressaoTextoAdicionalRodape, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
+          pw.Text(
+            impressaoTextoAdicionalRodape,
+            style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTexto - 3, fontWeight: pw.FontWeight.normal),
+          ),
         ],
       );
     }
@@ -651,6 +683,7 @@ class Cupom {
     /// Atendimento
     ///
 
+    pw.Widget wAtendimentoFoto = pw.SizedBox();
     pw.Widget wAtendimento = pw.SizedBox();
 
     if (primeiroNomeComissionado != '') {
@@ -673,22 +706,59 @@ class Cupom {
       );
     }
 
+    if (formato == 'estilo') {
+      final netImageAtend = await networkImage(venda.imagemFuncionarioComissionado);
+
+      wAtendimentoFoto = pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.center,
+        children: [
+          pw.ClipOval(
+            child: pw.SizedBox.fromSize(
+              size: const PdfPoint(30, 30),
+              child: //pw.Padding(
+                  pw.Image(netImageAtend, fit: pw.BoxFit.scaleDown),
+            ),
+          ),
+        ],
+      );
+
+      wAtendimento = pw.SizedBox();
+    }
+
     ///
     /// Itens do cupom
     ///
 
-    List<pw.Widget> list = [];
+    List<pw.Widget> listItens = [];
 
     for (var i = 0; i < cupom.itens.length; i++) {
       if (cupom.itens[i].peso > 0) {
-        list.add(
+        listItens.add(
           pw.Text(
             '${(i + 1).toString().padLeft(3, '0')} ${cupom.itens[i].digitado} ${cupom.itens[i].nome}',
             style: pw.TextStyle(fontSize: impressaoTamanhoFonteProduto, font: fontDetalhe),
           ),
         );
       } else {
-        list.add(
+        if (formato == 'estilo') {
+          final netImage = await networkImage(cupom.itens[i].imagemPrincipal);
+
+          listItens.add(
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                pw.SizedBox(
+                  width: 70,
+                  height: 70,
+                  child: //pw.Padding(
+                      pw.Image(netImage, fit: pw.BoxFit.scaleDown),
+                ),
+              ],
+            ),
+          );
+        }
+
+        listItens.add(
           pw.Text(
             '${(i + 1).toString().padLeft(3, '0')} ${cupom.itens[i].digitado} ${cupom.itens[i].nome} - ${cupom.itens[i].unidadeSigla}',
             style: pw.TextStyle(fontSize: impressaoTamanhoFonteProduto, font: fontDetalhe),
@@ -696,7 +766,7 @@ class Cupom {
         );
       }
 
-      list.add(
+      listItens.add(
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.end,
           children: [
@@ -708,8 +778,9 @@ class Cupom {
           ],
         ),
       );
+
       if (cupom.itens[i].linhaTotalDescImp != '') {
-        list.add(
+        listItens.add(
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
@@ -723,7 +794,7 @@ class Cupom {
         );
       }
 
-      list.add(
+      listItens.add(
         pw.SizedBox(height: 4),
       );
     }
@@ -735,6 +806,7 @@ class Cupom {
     List<pw.Widget> listPagtos = [];
 
     for (var i = 0; i < cupom.pagtos.length; i++) {
+      log('processando pagamento $i');
       int parcelas = cupom.pagtos[i].parcelas;
       String nome = parcelas == 0 ? cupom.pagtos[i].nome : '${cupom.pagtos[i].nome} ${parcelas}x';
 
@@ -795,31 +867,50 @@ class Cupom {
               /// Cabeçalho
               ///
 
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
-                children: [
-                  // pw.Padding(
-                  //   padding: const pw.EdgeInsets.only(left: 20, right: 20),
-                  //   child: pw.Image(netImage),
-                  // ),
-                  pw.Divider(height: impressaoEspacamento),
-                  pw.Text(empresa.nome, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal), textAlign: TextAlign.center),
-                  pw.Text('CNPJ:${empresa.cpfCnpj}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
-                  pw.Text('${empresa.logradouro} ${empresa.numero} ${empresa.complemento}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto), textAlign: TextAlign.center),
-                  pw.Text(empresa.bairro, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
-                  pw.Text('${empresa.municipio} - ${empresa.uF}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
-                  wContato,
-                  wTextoAdicionalContato,
-                  pw.Divider(height: impressaoEspacamento),
-                  pw.Text(tipoMovimento == '1' ? 'Venda X' : 'Pedido ${venda.idVenda}', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal)),
-                  pw.Text('Emissão:${empresa.dataCadastro}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
-                  pw.Text(venda.nomeFuncionarioOperador, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
-                  pw.Text(venda.nomeCargoFuncionarioOperador, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
-                  pw.Divider(height: impressaoEspacamento),
-                  pw.Text('${cupom.qtdProdutos.toStringAsFixed(0)} Iten(s)', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
-                  pw.Divider(height: impressaoEspacamento),
-                ],
-              ),
+              (formato == 'estilo'
+                  ? pw.Column(mainAxisAlignment: pw.MainAxisAlignment.center, children: [
+                      pw.Text(
+                        gUsuario.nomeLojaFisica,
+                        style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal),
+                        textAlign: TextAlign.center,
+                      ),
+                      wAtendimentoFoto,
+                      pw.Text(
+                        venda.nomeFuncionarioComissionado,
+                        style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.normal),
+                        textAlign: TextAlign.center,
+                      ),
+                      wContato,
+                      pw.Text(tipoMovimento == '1' ? 'Venda ${venda.idVenda}' : 'Pedido ${venda.idVenda}', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal)),
+                      pw.Divider(height: impressaoEspacamento),
+                    ])
+                  : pw.Column(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        // pw.Padding(
+                        //   padding: const pw.EdgeInsets.only(left: 20, right: 20),
+                        //   child: pw.Image(netImage),
+                        // ),
+                        pw.Divider(height: impressaoEspacamento),
+                        pw.Text(empresa.nome, style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal), textAlign: TextAlign.center),
+                        pw.Text('CNPJ:${empresa.cpfCnpj}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
+                        pw.Text('${empresa.logradouro} ${empresa.numero} ${empresa.complemento}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto), textAlign: TextAlign.center),
+                        pw.Text(empresa.bairro, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
+                        pw.Text('${empresa.municipio} - ${empresa.uF}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
+                        wContato,
+                        wTextoAdicionalContato,
+                        pw.Divider(height: impressaoEspacamento),
+                        pw.Text(tipoMovimento == '1' ? 'Venda ${venda.idVenda}' : 'Pedido ${venda.idVenda}',
+                            style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteTitulo, fontWeight: pw.FontWeight.normal)),
+                        pw.Text('Emissão:${empresa.dataCadastro}', style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto)),
+                        pw.Text(venda.nomeFuncionarioOperador, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
+                        pw.Text(venda.nomeCargoFuncionarioOperador, style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTexto, fontWeight: pw.FontWeight.bold)),
+                        pw.Divider(height: impressaoEspacamento),
+                        pw.Text('${cupom.qtdProdutos.toStringAsFixed(0)} Iten(s)', style: pw.TextStyle(font: fontTitulo, fontSize: impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.normal)),
+                        pw.Divider(height: impressaoEspacamento),
+                      ],
+                    )),
 
               ///
               /// Itens
@@ -827,7 +918,7 @@ class Cupom {
 
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: list,
+                children: listItens,
               ),
 
               ///
@@ -840,15 +931,37 @@ class Cupom {
                   //pw.Divider(height: _impressaoEspacamento),
                   //pw.Text('Quantidade de itens: ' + cupom.qtdProdutos.toStringAsFixed(0), style: pw.TextStyle(font: fontDetalhe, fontSize: _impressaoTamanhoFonteSubTitulo, fontWeight: pw.FontWeight.bold)),
                   pw.Divider(height: impressaoEspacamento),
-                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
-                    pw.Text(('SUB-TOTAL ${cupom.subTotalF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
-                  ]),
-                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
-                    pw.Text(('ACRÉSCIMO ${cupom.acrescimoF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
-                  ]),
-                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
-                    pw.Text((' DESCONTO ${cupom.descontoF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
-                  ]),
+
+                  ///
+                  ///
+                  ///
+                  (cupom.pagtos.isNotEmpty
+                      ? pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+                          pw.Text(('SUB-TOTAL ${cupom.subTotalF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
+                        ])
+                      : pw.SizedBox()),
+
+                  ///
+                  ///
+                  ///
+                  (cupom.acrescimo > 0
+                      ? pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+                          pw.Text(('ACRÉSCIMO ${cupom.acrescimoF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
+                        ])
+                      : pw.SizedBox()),
+
+                  ///
+                  ///
+                  ///
+                  (cupom.desconto > 0
+                      ? pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+                          pw.Text((' DESCONTO ${cupom.descontoF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
+                        ])
+                      : pw.SizedBox()),
+
+                  ///
+                  ///
+                  ///
                   pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
                     pw.Text(('    TOTAL ${cupom.totalF.padLeft(10)}'), style: pw.TextStyle(font: fontDetalhe, fontSize: impressaoTamanhoFonteTotais)),
                   ]),
@@ -938,28 +1051,69 @@ class Cupom {
       }
     } else if (modo == 'compartilhar') {
       await facileSharePdf(await doc.save(), subdominio, 'CUPOM', '');
+    } else if (modo == 'na') {
+      ///
+      /// Chamador somente precisa dos bytes do pdf
+      ///
     } else {
-      Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (context) => PdfPreview(
-            allowPrinting: false,
-            allowSharing: false,
-            dpi: 300,
-            canDebug: false,
-            canChangeOrientation: false,
-            canChangePageFormat: false,
-            build: (PdfPageFormat format) => doc.save(),
-          ),
+      showCupertinoModalBottomSheet(
+        backgroundColor: FacileTheme.getShadowColor(context),
+        duration: getCupertinoModalBottomSheetDuration(),
+        context: context,
+        builder: (context) => PdfPreview(
+          actions: [
+            CloseButton(
+              onPressed: () async {
+                Navigator.pop(context);
+              },
+            )
+          ],
+          allowPrinting: true,
+          allowSharing: true,
+          dpi: 300,
+          canDebug: false,
+          canChangeOrientation: false,
+          canChangePageFormat: false,
+          build: (PdfPageFormat format) => doc.save(),
         ),
+      ).then(
+        (value) {},
       );
+
+      // Navigator.push(
+      //   context,
+      //   CupertinoPageRoute(
+      //     barrierDismissible: true,
+      //     builder: (context) =>
+
+      //     PdfPreview(
+      //       actions: [
+      //         CloseButton(
+      //           onPressed: () async {
+      //             Navigator.pop(context);
+      //           },
+      //         )
+      //       ],
+      //       allowPrinting: true,
+      //       allowSharing: true,
+      //       dpi: 300,
+      //       canDebug: false,
+      //       canChangeOrientation: false,
+      //       canChangePageFormat: false,
+      //       build: (PdfPageFormat format) => doc.save(),
+      //     ),
+
+      //   ),
+      // );
     }
+    return doc.save();
   }
 }
 
 class CupomItem {
   String idProduto;
   String nome;
+  String categoriaNome;
   String digitado;
   String eanSistema;
   String eanFornecedor;
@@ -994,6 +1148,7 @@ class CupomItem {
   CupomItem({
     required this.idProduto,
     required this.nome,
+    required this.categoriaNome,
     required this.digitado,
     required this.eanSistema,
     required this.eanFornecedor,
@@ -1026,6 +1181,7 @@ class CupomItem {
       'hash': hash,
       'idProduto': idProduto,
       'nome': nome,
+      'categoriaNome': categoriaNome,
       'digitado': digitado,
       'eanSistema': eanSistema,
       'eanFornecedor': eanFornecedor,
@@ -1084,48 +1240,6 @@ class CupomPagto {
       'valor': valor,
       'parcelas': parcelas,
     };
-  }
-}
-
-void impressaoEtiqueta(context, caption, codigoEan, {imprimeCodigo = true}) async {
-  final doc = pw.Document();
-  final barCodeSvg = Barcode.ean13(
-    drawEndChar: false,
-  ).toSvg(
-    codigoEan,
-    width: 150,
-    height: 50,
-    drawText: imprimeCodigo,
-  );
-
-  double inch = 72.0;
-  double mm = inch / 25.4;
-
-  doc.addPage(
-    pw.Page(
-      pageFormat: PdfPageFormat(40 * mm, double.infinity, marginAll: 1 * mm),
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
-          children: [
-            pw.Text(caption, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-            pw.SvgImage(svg: barCodeSvg),
-          ],
-        ); // Center
-      },
-    ),
-  ); // Page
-
-  try {
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => doc.save(),
-      format: PdfPageFormat.roll57,
-      name: 'FACILE',
-    ).then((value) => () {
-          Navigator.pop(context);
-        });
-  } catch (e) {
-    //facilePrintErro(context);
   }
 }
 
@@ -1721,4 +1835,119 @@ Future<void> facileSharePdf(Uint8List bytes, subdominio, titulo, intervalo) asyn
     subject: 'Facile Loja App - $subdominio: $titulo',
     body: 'Enviado por $subdominio\r\n\r\nConforme solicitado, segue relatório em anexo.\r\n $intervalo\r\n\r\nAtenciosamente,\r\nEquipe Facile Vendas',
   );
+}
+
+void impressaoEtiqueta(context, caption, codigoEan, {imprimeCodigo = true}) async {
+  final doc = pw.Document();
+  final barCodeSvg = Barcode.ean13(
+    drawEndChar: false,
+  ).toSvg(
+    codigoEan,
+    width: 150,
+    height: 50,
+    drawText: imprimeCodigo,
+  );
+
+  double inch = 72.0;
+  double mm = inch / 25.4;
+
+  doc.addPage(
+    pw.Page(
+      pageFormat: PdfPageFormat(58 * mm, double.infinity, marginAll: 1 * mm),
+      build: (pw.Context context) {
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(8),
+              child: pw.Text(caption, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10.0)),
+            ),
+            pw.SvgImage(svg: barCodeSvg),
+          ],
+        ); // Center
+      },
+    ),
+  ); // Page
+
+  try {
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => doc.save(),
+      format: PdfPageFormat.roll57,
+      name: 'FACILE',
+    ).then((value) => () {
+          Navigator.pop(context);
+        });
+  } catch (e) {
+    //facilePrintErro(context);
+  }
+}
+
+Future<pw.Font> getFont(String noFont) async {
+  var f = await PdfGoogleFonts.lobsterRegular();
+
+  if (noFont == '2') {
+    f = await PdfGoogleFonts.oleoScriptRegular();
+  } else if (noFont == '3') {
+    f = await PdfGoogleFonts.kaushanScriptRegular();
+  } else if (noFont == '4') {
+    f = await PdfGoogleFonts.oleoScriptRegular();
+  } else if (noFont == '5') {
+    f = await PdfGoogleFonts.lilyScriptOneRegular();
+  } else if (noFont == '6') {
+    f = await PdfGoogleFonts.antonRegular();
+  } else if (noFont == '7') {
+    f = await PdfGoogleFonts.fjallaOneRegular();
+  } else if (noFont == '8') {
+    f = await PdfGoogleFonts.permanentMarkerRegular();
+  } else if (noFont == '9') {
+    f = await PdfGoogleFonts.lilitaOneRegular();
+  } else if (noFont == '10') {
+    f = await PdfGoogleFonts.gruppoRegular();
+  } else if (noFont == '11') {
+    f = await PdfGoogleFonts.bangersRegular();
+  } else if (noFont == '12') {
+    f = await PdfGoogleFonts.rockSaltRegular();
+  } else if (noFont == '13') {
+    f = await PdfGoogleFonts.shrikhandRegular();
+  } else if (noFont == '14') {
+    f = await PdfGoogleFonts.tourneyExtraBold();
+  } else if (noFont == '15') {
+    f = await PdfGoogleFonts.hennyPennyRegular();
+  }
+  return f;
+}
+
+Future<dynamic> getFontScr(String noFont) async {
+  var f = GoogleFonts.lobster();
+
+  if (noFont == '2') {
+    f = GoogleFonts.oleoScript();
+  } else if (noFont == '3') {
+    f = GoogleFonts.kaushanScript();
+  } else if (noFont == '4') {
+    f = GoogleFonts.oleoScript();
+  } else if (noFont == '5') {
+    f = GoogleFonts.lilyScriptOne();
+  } else if (noFont == '6') {
+    f = GoogleFonts.anton();
+  } else if (noFont == '7') {
+    f = GoogleFonts.fjallaOne();
+  } else if (noFont == '8') {
+    f = GoogleFonts.permanentMarker();
+  } else if (noFont == '9') {
+    f = GoogleFonts.lilitaOne();
+  } else if (noFont == '10') {
+    f = GoogleFonts.gruppo();
+  } else if (noFont == '11') {
+    f = GoogleFonts.bangers();
+  } else if (noFont == '12') {
+    f = GoogleFonts.rockSalt();
+  } else if (noFont == '13') {
+    f = GoogleFonts.shrikhand();
+  } else if (noFont == '14') {
+    f = GoogleFonts.tourney();
+  } else if (noFont == '15') {
+    f = GoogleFonts.hennyPenny();
+  }
+  return f;
 }

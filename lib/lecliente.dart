@@ -639,6 +639,8 @@ class _LeClienteState extends State<LeClientePage> {
           backgroundColor: FacileTheme.getColorPrimary(context),
         ),
         onPressed: () {
+          gDevice.beep();
+
           retornarValor(context);
         },
       );

@@ -36,6 +36,8 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     List<Widget> w1 = [
+      FacileTheme.headlineMedium(context, 'Aplicativo de vendas ${gUrlPost.versaoApp}'),
+      FacileTheme.headlineSmall(context, gUrlPost.nomeVersaoApp, fontSize: 12),
       FacileTheme.headlineLarge(context, gUsuario.nomeLojaFisica).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey),
       FacileTheme.headlineMedium(context, gUsuario.nome),
       FacileTheme.displaySmall(context, gUsuario.nomeCargo),
@@ -48,6 +50,8 @@ class _ProfilePageState extends State<ProfilePage> {
           FacileTheme.displaySmall(context, gUsuario.terminalNome),
         ],
       ),
+      FacileTheme.headlineMedium(context, 'DISPOSITIVO'),
+      FacileTheme.displaySmall(context, gUsuario.host),
       getEspacadorDuplo(),
     ];
 

@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/produtos.dart';
 import 'package:facilelojaapp/profile.dart';
@@ -10,6 +13,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import 'caixa.dart';
+import 'filaatendimento.dart';
 import 'terminalconsulta.dart';
 
 class MenuPage extends StatefulWidget {
@@ -42,6 +46,9 @@ class _MenuPageState extends State<MenuPage> {
     if (event.runtimeType == RawKeyDownEvent) {
       //log('AberturaPage::onFocusKey::$s');
 
+      if (s == 'Escape') {
+        Navigator.pop(context);
+      }
       if (s == 'F2') {
         goCaixa(context, CaixaModo.venda);
       }
@@ -67,6 +74,34 @@ class _MenuPageState extends State<MenuPage> {
   Widget build(BuildContext context) {
     if (bg.isEmpty) {
       bg = getBackground(context);
+    }
+
+    List<FormFloatingActionButton> listFloatingActionButton = [];
+
+    if (gDevice.isWindows) {
+      listFloatingActionButton.add(FormFloatingActionButton(
+          icon: CupertinoIcons.back,
+          caption: getTextWindowsKey((gDevice.isWindows ? 'VOLTAR' : ''), 'ESC'),
+          onTap: () {
+            Navigator.pop(context);
+          }));
+    }
+
+    List<FormIconButton> listIconButton = [];
+
+    if (gDevice.isWindows) {
+      listIconButton.add(FormIconButton(
+        icon: CupertinoIcons.printer,
+        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Scanner', 'F4'),
+        onTap: () {
+          if (gDevice.printServiceRunning) {
+            gDevice.stopPrintService(context);
+          } else {
+            gDevice.startPrintService(context);
+          }
+          setState(() {});
+        },
+      ));
     }
 
     List<Widget> w1 = [
@@ -154,7 +189,7 @@ class _MenuPageState extends State<MenuPage> {
           caption: getTextWindowsKey('Caixa', 'F2'),
           icon: Icons.point_of_sale_outlined,
           onTap: () {
-            goCaixa(context, CaixaModo.venda);
+            menuCaixa(context);
           },
         ),
       );
@@ -198,6 +233,7 @@ class _MenuPageState extends State<MenuPage> {
     );
 
     if (gDevice.isAndroid && (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger' || gUsuario.siglaCargo == 'inv')) {
+      //if ((gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger' || gUsuario.siglaCargo == 'inv')) {
       listFormIconButton.add(
         FormIconButton(
           caption: getTextWindowsKey('Inventário', 'F5'),
@@ -361,6 +397,8 @@ class _MenuPageState extends State<MenuPage> {
       ),
     ];
 
+    log('gDevice.printServiceRunning XXXXXXXXXXXXXXXXX ${gDevice.printServiceRunning}');
+
     return Focus(
       autofocus: true,
       onKey: (node, event) {
@@ -374,10 +412,52 @@ class _MenuPageState extends State<MenuPage> {
         },
         child: SafeArea(
           child: Scaffold(
-            body: getStackCupertino(
-              context,
-              getBackground(context),
-              getBody(context, w1, w2, flex1: 4, flex2: 6, mainAxisAlignment: MainAxisAlignment.center),
+            floatingActionButton: getFormFloatingActionButtonList(listFloatingActionButton),
+            appBar: getCupertinoAppBar(context, 'MENU', listIconButton, isBack: true, addClose: true),
+            body: Stack(
+              children: [
+                getStackCupertino(
+                  context,
+                  getBackground(context),
+                  getBody(context, w1, w2, flex1: 4, flex2: 6, mainAxisAlignment: MainAxisAlignment.center),
+                ),
+                gDevice.isWindows && gUsuario.terminalImpressao == 'S'
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: AvatarGlow(
+                              glowColor: gDevice.printServiceRunning ? FacileTheme.getColorHard(context) : Colors.grey,
+                              endRadius: 60,
+                              duration: const Duration(milliseconds: 1000),
+                              repeat: true,
+                              showTwoGlows: true,
+                              repeatPauseDuration: const Duration(milliseconds: 100),
+                              child: Material(
+                                elevation: 8.0,
+                                shape: const CircleBorder(),
+                                child: CircleAvatar(
+                                  backgroundColor: gDevice.printServiceRunning ? FacileTheme.getColorHard(context) : Colors.grey,
+                                  radius: 30,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        (gDevice.printServiceRunning ? Icons.print_outlined : Icons.print_disabled_outlined),
+                                        size: 25,
+                                        color: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : const SizedBox(),
+              ],
             ),
           ),
         ),
@@ -390,6 +470,17 @@ class _MenuPageState extends State<MenuPage> {
       context,
       CupertinoPageRoute(
         builder: (context) => CaixaPage(modo: modo),
+      ),
+    ).then((value) {
+      //log('value=$value');
+    });
+  }
+
+  void goAtendimento(context) {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => const FilaAtendimentoPage(),
       ),
     ).then((value) {
       //log('value=$value');
@@ -428,7 +519,15 @@ class _MenuPageState extends State<MenuPage> {
             Navigator.pop(context);
             goCaixa(context, CaixaModo.pedidoLoja);
           },
-          child: FacileTheme.displaySmall(context, "ATENDIMENTO LOJA"),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.store_outlined,
+                size: 48,
+              ),
+              FacileTheme.displayMedium(context, "ATENDIMENTO LOJA"),
+            ],
+          ),
         ),
         CupertinoActionSheetAction(
           isDefaultAction: true,
@@ -436,7 +535,63 @@ class _MenuPageState extends State<MenuPage> {
             Navigator.pop(context);
             goCaixa(context, CaixaModo.pedidoZap);
           },
-          child: FacileTheme.displaySmall(context, "ATENDIMENTO WHATSAPP"),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.chat_outlined,
+                size: 48,
+              ),
+              FacileTheme.displayMedium(context, "ATENDIMENTO WHATSAPP"),
+            ],
+          ),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: FacileTheme.displaySmall(context, 'CANCELA'),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+
+    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
+  }
+
+  void menuCaixa(context) {
+    final action = CupertinoActionSheet(
+      title: FacileTheme.headlineSmall(context, 'SELECIONE A FORMA DE VENDA'),
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            goCaixa(context, CaixaModo.venda);
+          },
+          child: Column(
+            children: [
+              const Icon(
+                Icons.person_2_outlined,
+                size: 48,
+              ),
+              FacileTheme.displayMedium(context, "DIRETO COM CLIENTE"),
+            ],
+          ),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () async {
+            Navigator.pop(context);
+            goAtendimento(context);
+          },
+          child: Column(
+            children: [
+              const Icon(
+                Icons.groups_2_outlined,
+                size: 48,
+              ),
+              FacileTheme.displayMedium(context, "FILA DE ATENDIMENTO"),
+            ],
+          ),
         ),
       ],
       cancelButton: CupertinoActionSheetAction(

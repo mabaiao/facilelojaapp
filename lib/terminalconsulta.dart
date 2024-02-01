@@ -189,7 +189,7 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
     if (codigo.isEmpty || exibindo) {
       return;
     }
-    if (codigo.length == 12 && codigo.substring(0, 3) == '000') {
+    if (codigo.length == 12) {
       codigo = '0$codigo';
     }
 
