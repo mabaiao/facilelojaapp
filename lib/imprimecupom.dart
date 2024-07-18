@@ -345,7 +345,13 @@ class _ImprimeCupomState extends State<ImprimeCupomPage> {
     );
   }
 
-  void imprime(context, String modo, {estilizado = false, noFont = '1'}) {
+  void imprime(context, String modo, {estilizado = false, noFont = '1'}) async {
+    // List<Printer> p = await Printing.listPrinters();
+
+    // for (var printer in p) {
+    //   log('PRITER::$printer');
+    // }
+
     cupomLido.impressaoCupom(
       context,
       empresa,

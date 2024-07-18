@@ -12,6 +12,7 @@ class FacileParams {
   late String vendaPedirPermissaoLeituraConferencia = '';
   late String vendaSolicitarAtendimento = '';
   late String vendaLimiteProdutoConsulta = '';
+  late String vendaLimiteParcelasCredito = '';
   late String pedidoPermitirGerarSemEstoque = '';
   late String compartilhamentoTextoPadrao = '';
   late String aparenciaPadraoExibicaoNomeProduto = '';
@@ -45,6 +46,7 @@ class FacileParams {
       vendaPedirPermissaoLeituraConferencia = aResult['opcoesGlobais']['_vendaPedirPermissaoLeituraConferencia'];
       vendaSolicitarAtendimento = aResult['opcoesGlobais']['_vendaSolicitarAtendimento'];
       vendaLimiteProdutoConsulta = aResult['opcoesGlobais']['_vendaLimiteProdutoConsulta'];
+      vendaLimiteParcelasCredito = aResult['opcoesGlobais']['_vendaLimiteParcelasCredito'];
       pedidoPermitirGerarSemEstoque = aResult['opcoesGlobais']['_pedidoPermitirGerarSemEstoque'];
       compartilhamentoTextoPadrao = aResult['opcoesGlobais']['_compartilhamentoTextoPadrao'];
       aparenciaPadraoExibicaoNomeProduto = aResult['opcoesGlobais']['_aparenciaPadraoExibicaoNomeProduto'];
@@ -69,6 +71,7 @@ class FacileParams {
     log('PARAMETROS::vendaPedirPermissaoLeituraConferencia::$vendaPedirPermissaoLeituraConferencia');
     log('PARAMETROS::vendaSolicitarAtendimento::$vendaSolicitarAtendimento');
     log('PARAMETROS::vendaLimiteProdutoConsulta::$vendaLimiteProdutoConsulta');
+    log('PARAMETROS::vendaLimiteParcelasCredito::$vendaLimiteParcelasCredito');
     log('PARAMETROS::pedidoPermitirGerarSemEstoque::$pedidoPermitirGerarSemEstoque');
     log('PARAMETROS::compartilhamentoTextoPadrao::$compartilhamentoTextoPadrao');
     log('PARAMETROS::aparenciaPadraoExibicaoNomeProduto::$aparenciaPadraoExibicaoNomeProduto');

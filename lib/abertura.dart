@@ -326,22 +326,15 @@ class _AberturaState extends State<AberturaPage> {
   }
 
   void descadastrar(context) async {
-    Map<String, String> params = {
-      'Funcao': 'Descadastra',
-    };
+    FacileResponse response = await facileRouter(context, '/gadget/descadastrardispositivo', {}, showProc: true, addParam: true);
 
-    var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: true, addParam: true);
-
-    if (aResult == null) {
+    if (response.isOk()) {
       gUsuario.clear();
-      setState(() {});
-    } else if (aResult != null && aResult['Status'] == 'OK') {
-      gUsuario.clear();
-      facileSnackBarSucess(context, 'Show!', aResult['Msg']);
+      facileSnackBarSucess(context, 'Show!', response.descricao);
       setState(() {});
     } else {
       gUsuario.clear();
-      facileSnackBarError(context, 'Ops!', aResult['Msg']);
+      facileSnackBarError(context, 'Ops!', response.descricao);
       setState(() {});
     }
   }

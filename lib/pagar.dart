@@ -34,7 +34,7 @@ class _PagamentoState extends State<PagamentoPage> {
   List<Widget> bg = [];
   String svg = '';
   bool isLoad = true;
-  int parcelas = 1;
+  int parcelas = 0;
 
   @override
   void initState() {
@@ -309,7 +309,7 @@ class _PagamentoState extends State<PagamentoPage> {
                                                 },
                                                 child: AvatarGlow(
                                                   glowColor: Colors.green.shade900,
-                                                  endRadius: 120,
+                                                  endRadius: gDevice.isPhoneSmall ? 70 : 120,
                                                   duration: const Duration(milliseconds: 1000),
                                                   repeat: true,
                                                   showTwoGlows: true,
@@ -319,13 +319,21 @@ class _PagamentoState extends State<PagamentoPage> {
                                                     shape: const CircleBorder(),
                                                     child: CircleAvatar(
                                                       backgroundColor: Colors.green.shade900,
-                                                      radius: gDevice.isTabletAll ? 80 : 50,
+                                                      radius: gDevice.isTabletAll
+                                                          ? 80
+                                                          : gDevice.isPhoneSmall
+                                                              ? 40
+                                                              : 50,
                                                       child: Column(
                                                         mainAxisAlignment: MainAxisAlignment.center,
                                                         children: [
                                                           Icon(
                                                             Icons.send,
-                                                            size: gDevice.isTabletAll ? 80 : 40,
+                                                            size: gDevice.isTabletAll
+                                                                ? 80
+                                                                : gDevice.isPhoneSmall
+                                                                    ? 30
+                                                                    : 40,
                                                             color: Colors.white,
                                                           ),
                                                           FacileTheme.headlineMedium(
@@ -455,7 +463,9 @@ class _PagamentoState extends State<PagamentoPage> {
         ),
       );
 
-      for (var i = 2; i <= 16; i++) {
+      int max = int.parse(gParametros.vendaLimiteParcelasCredito);
+
+      for (var i = 2; i <= max; i++) {
         acts.add(
           CupertinoActionSheetAction(
             isDefaultAction: true,

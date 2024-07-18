@@ -118,6 +118,12 @@ class FacileTheme {
       colorSchemeSeed: corDef,
       scaffoldBackgroundColor: brightness == Brightness.dark ? defaultColorDark : defaultColorLight,
       appBarTheme: AppBarTheme(
+        //elevation: 10,
+        //shadowColor: Colors.grey,
+        toolbarHeight: gDevice.isWindows || gDevice.isTabletAll ? 70 : null,
+        iconTheme: IconThemeData(
+          size: gDevice.isWindows || gDevice.isTabletAll ? 40 : null,
+        ),
         titleTextStyle: GoogleFonts.ubuntuCondensed(
           color: corDef,
           fontWeight: FontWeight.bold,
@@ -171,11 +177,11 @@ class FacileTheme {
         ),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
-          if (states.contains(MaterialState.disabled)) {
+        thumbColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+          if (states.contains(WidgetState.disabled)) {
             return null;
           }
-          if (states.contains(MaterialState.selected)) {
+          if (states.contains(WidgetState.selected)) {
             return corDef;
           }
           return null;

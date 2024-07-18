@@ -1,34 +1,17 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
 class ProdutoVariacao {
-  String id;
-  String dataCadastro;
-  String dataAlteracao;
-  String idProduto;
-  String sku;
-  String idVariacaoA;
-  String nomeCampoVarA;
-  String idVariacaoB;
-  String nomeCampoVarB;
-  String idVariacaoC;
-  String nomeCampoVarC;
-  String f_1;
-  String eanSistema;
-  String eanFornecedor;
-  String codigoFornecedor;
-  String precoVendaVarejo;
-  String precoVendaAtacado;
-  String precoVendaPromocional;
-  String precoVendaIfood;
-  String estoqueAtual;
-  String estoqueControlado;
-  String estoqueAtualF;
-  String precoVendaVarejoF;
-  String precoVendaAtacadoF;
-  String precoVendaPromocionalF;
-  String precoVendaIfoodF;
-  String quantidadeSelecionada;
+  int id; // ": 835,
+  String dataCadastro; // ": "2024-07-04 11:20:44",
+  String dataAlteracao; // ": "2024-07-04 11:20:44",
+  int idProduto; // ": 61363,
+  String sku; // ": "",
+  int idVariacaoA; // ": 1,
+  String nomeCampoVarA; // ": "VU",
+  int idVariacaoB; // ": 0,
+  String nomeCampoVarB; // ": "",
+  double preco; // ": 119.99,
+  String estoqueControlado; // ": "N"
   ProdutoVariacao({
     required this.id,
     required this.dataCadastro,
@@ -39,54 +22,22 @@ class ProdutoVariacao {
     required this.nomeCampoVarA,
     required this.idVariacaoB,
     required this.nomeCampoVarB,
-    required this.idVariacaoC,
-    required this.nomeCampoVarC,
-    required this.f_1,
-    required this.eanSistema,
-    required this.eanFornecedor,
-    required this.codigoFornecedor,
-    required this.precoVendaVarejo,
-    required this.precoVendaAtacado,
-    required this.precoVendaPromocional,
-    required this.precoVendaIfood,
-    required this.estoqueAtual,
+    required this.preco,
     required this.estoqueControlado,
-    required this.estoqueAtualF,
-    required this.precoVendaVarejoF,
-    required this.precoVendaAtacadoF,
-    required this.precoVendaPromocionalF,
-    required this.precoVendaIfoodF,
-    required this.quantidadeSelecionada,
   });
 
   ProdutoVariacao copyWith({
-    String? id,
+    int? id,
     String? dataCadastro,
     String? dataAlteracao,
-    String? idProduto,
+    int? idProduto,
     String? sku,
-    String? idVariacaoA,
+    int? idVariacaoA,
     String? nomeCampoVarA,
-    String? idVariacaoB,
+    int? idVariacaoB,
     String? nomeCampoVarB,
-    String? idVariacaoC,
-    String? nomeCampoVarC,
-    String? f_1,
-    String? eanSistema,
-    String? eanFornecedor,
-    String? codigoFornecedor,
-    String? precoVendaVarejo,
-    String? precoVendaAtacado,
-    String? precoVendaPromocional,
-    String? precoVendaIfood,
-    String? estoqueAtual,
+    double? preco,
     String? estoqueControlado,
-    String? estoqueAtualF,
-    String? precoVendaVarejoF,
-    String? precoVendaAtacadoF,
-    String? precoVendaPromocionalF,
-    String? precoVendaIfoodF,
-    String? quantidadeSelecionada,
   }) {
     return ProdutoVariacao(
       id: id ?? this.id,
@@ -98,105 +49,60 @@ class ProdutoVariacao {
       nomeCampoVarA: nomeCampoVarA ?? this.nomeCampoVarA,
       idVariacaoB: idVariacaoB ?? this.idVariacaoB,
       nomeCampoVarB: nomeCampoVarB ?? this.nomeCampoVarB,
-      idVariacaoC: idVariacaoC ?? this.idVariacaoC,
-      nomeCampoVarC: nomeCampoVarC ?? this.nomeCampoVarC,
-      f_1: f_1 ?? this.f_1,
-      eanSistema: eanSistema ?? this.eanSistema,
-      eanFornecedor: eanFornecedor ?? this.eanFornecedor,
-      codigoFornecedor: codigoFornecedor ?? this.codigoFornecedor,
-      precoVendaVarejo: precoVendaVarejo ?? this.precoVendaVarejo,
-      precoVendaAtacado: precoVendaAtacado ?? this.precoVendaAtacado,
-      precoVendaPromocional: precoVendaPromocional ?? this.precoVendaPromocional,
-      precoVendaIfood: precoVendaIfood ?? this.precoVendaIfood,
-      estoqueAtual: estoqueAtual ?? this.estoqueAtual,
+      preco: preco ?? this.preco,
       estoqueControlado: estoqueControlado ?? this.estoqueControlado,
-      estoqueAtualF: estoqueAtualF ?? this.estoqueAtualF,
-      precoVendaVarejoF: precoVendaVarejoF ?? this.precoVendaVarejoF,
-      precoVendaAtacadoF: precoVendaAtacadoF ?? this.precoVendaAtacadoF,
-      precoVendaPromocionalF: precoVendaPromocionalF ?? this.precoVendaPromocionalF,
-      precoVendaIfoodF: precoVendaIfoodF ?? this.precoVendaIfoodF,
-      quantidadeSelecionada: quantidadeSelecionada ?? this.quantidadeSelecionada,
     );
   }
 
   Map<String, dynamic> toMap() {
-    return <String, dynamic>{
-      'id': id,
-      'dataCadastro': dataCadastro,
-      'dataAlteracao': dataAlteracao,
-      'idProduto': idProduto,
-      'sku': sku,
-      'idVariacaoA': idVariacaoA,
-      'nomeCampoVarA': nomeCampoVarA,
-      'idVariacaoB': idVariacaoB,
-      'nomeCampoVarB': nomeCampoVarB,
-      'idVariacaoC': idVariacaoC,
-      'nomeCampoVarC': nomeCampoVarC,
-      'f_1': f_1,
-      'eanSistema': eanSistema,
-      'eanFornecedor': eanFornecedor,
-      'codigoFornecedor': codigoFornecedor,
-      'precoVendaVarejo': precoVendaVarejo,
-      'precoVendaAtacado': precoVendaAtacado,
-      'precoVendaPromocional': precoVendaPromocional,
-      'precoVendaIfood': precoVendaIfood,
-      'estoqueAtual': estoqueAtual,
-      'estoqueControlado': estoqueControlado,
-      'estoqueAtualF': estoqueAtualF,
-      'precoVendaVarejoF': precoVendaVarejoF,
-      'precoVendaAtacadoF': precoVendaAtacadoF,
-      'precoVendaPromocionalF': precoVendaPromocionalF,
-      'precoVendaIfoodF': precoVendaIfoodF,
-      'quantidadeSelecionada': quantidadeSelecionada,
-    };
+    final result = <String, dynamic>{};
+
+    result.addAll({'id': id});
+    result.addAll({'dataCadastro': dataCadastro});
+    result.addAll({'dataAlteracao': dataAlteracao});
+    result.addAll({'idProduto': idProduto});
+    result.addAll({'sku': sku});
+    result.addAll({'idVariacaoA': idVariacaoA});
+    result.addAll({'nomeCampoVarA': nomeCampoVarA});
+    result.addAll({'idVariacaoB': idVariacaoB});
+    result.addAll({'nomeCampoVarB': nomeCampoVarB});
+    result.addAll({'preco': preco});
+    result.addAll({'estoqueControlado': estoqueControlado});
+
+    return result;
   }
 
   factory ProdutoVariacao.fromMap(Map<String, dynamic> map) {
     return ProdutoVariacao(
-      id: map['id'] as String,
-      dataCadastro: map['dataCadastro'] as String,
-      dataAlteracao: map['dataAlteracao'] as String,
-      idProduto: map['idProduto'] as String,
-      sku: map['sku'] as String,
-      idVariacaoA: map['idVariacaoA'] as String,
-      nomeCampoVarA: map['nomeCampoVarA'] as String,
-      idVariacaoB: map['idVariacaoB'] as String,
-      nomeCampoVarB: map['nomeCampoVarB'] as String,
-      idVariacaoC: map['idVariacaoC'] as String,
-      nomeCampoVarC: map['nomeCampoVarC'] as String,
-      f_1: map['f_1'] as String,
-      eanSistema: map['eanSistema'] as String,
-      eanFornecedor: map['eanFornecedor'] as String,
-      codigoFornecedor: map['codigoFornecedor'] as String,
-      precoVendaVarejo: map['precoVendaVarejo'] as String,
-      precoVendaAtacado: map['precoVendaAtacado'] as String,
-      precoVendaPromocional: map['precoVendaPromocional'] as String,
-      precoVendaIfood: map['precoVendaIfood'] as String,
-      estoqueAtual: map['estoqueAtual'] as String,
-      estoqueControlado: map['estoqueControlado'] as String,
-      estoqueAtualF: map['estoqueAtualF'] as String,
-      precoVendaVarejoF: map['precoVendaVarejoF'] as String,
-      precoVendaAtacadoF: map['precoVendaAtacadoF'] as String,
-      precoVendaPromocionalF: map['precoVendaPromocionalF'] as String,
-      precoVendaIfoodF: map['precoVendaIfoodF'] as String,
-      quantidadeSelecionada: map['quantidadeSelecionada'] as String,
+      id: map['id']?.toInt() ?? 0,
+      dataCadastro: map['dataCadastro'] ?? '',
+      dataAlteracao: map['dataAlteracao'] ?? '',
+      idProduto: map['idProduto']?.toInt() ?? 0,
+      sku: map['sku'] ?? '',
+      idVariacaoA: map['idVariacaoA']?.toInt() ?? 0,
+      nomeCampoVarA: map['nomeCampoVarA'] ?? '',
+      idVariacaoB: map['idVariacaoB']?.toInt() ?? 0,
+      nomeCampoVarB: map['nomeCampoVarB'] ?? '',
+      preco: map['preco']?.toDouble() ?? 0.0,
+      estoqueControlado: map['estoqueControlado'] ?? '',
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory ProdutoVariacao.fromJson(String source) => ProdutoVariacao.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory ProdutoVariacao.fromJson(String source) => ProdutoVariacao.fromMap(json.decode(source));
 
   @override
   String toString() {
-    return 'ProdutoVariacao(id: $id, dataCadastro: $dataCadastro, dataAlteracao: $dataAlteracao, idProduto: $idProduto, sku: $sku, idVariacaoA: $idVariacaoA, nomeCampoVarA: $nomeCampoVarA, idVariacaoB: $idVariacaoB, nomeCampoVarB: $nomeCampoVarB, idVariacaoC: $idVariacaoC, nomeCampoVarC: $nomeCampoVarC, f_1: $f_1, eanSistema: $eanSistema, eanFornecedor: $eanFornecedor, codigoFornecedor: $codigoFornecedor, precoVendaVarejo: $precoVendaVarejo, precoVendaAtacado: $precoVendaAtacado, precoVendaPromocional: $precoVendaPromocional, precoVendaIfood: $precoVendaIfood, estoqueAtual: $estoqueAtual, estoqueControlado: $estoqueControlado, estoqueAtualF: $estoqueAtualF, precoVendaVarejoF: $precoVendaVarejoF, precoVendaAtacadoF: $precoVendaAtacadoF, precoVendaPromocionalF: $precoVendaPromocionalF, precoVendaIfoodF: $precoVendaIfoodF, quantidadeSelecionada: $quantidadeSelecionada)';
+    return 'ProdutoVariacao(id: $id, dataCadastro: $dataCadastro, dataAlteracao: $dataAlteracao, idProduto: $idProduto, sku: $sku, idVariacaoA: $idVariacaoA, nomeCampoVarA: $nomeCampoVarA, idVariacaoB: $idVariacaoB, nomeCampoVarB: $nomeCampoVarB, preco: $preco, estoqueControlado: $estoqueControlado)';
   }
 
   @override
-  bool operator ==(covariant ProdutoVariacao other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other.id == id &&
+    return other is ProdutoVariacao &&
+        other.id == id &&
         other.dataCadastro == dataCadastro &&
         other.dataAlteracao == dataAlteracao &&
         other.idProduto == idProduto &&
@@ -205,24 +111,8 @@ class ProdutoVariacao {
         other.nomeCampoVarA == nomeCampoVarA &&
         other.idVariacaoB == idVariacaoB &&
         other.nomeCampoVarB == nomeCampoVarB &&
-        other.idVariacaoC == idVariacaoC &&
-        other.nomeCampoVarC == nomeCampoVarC &&
-        other.f_1 == f_1 &&
-        other.eanSistema == eanSistema &&
-        other.eanFornecedor == eanFornecedor &&
-        other.codigoFornecedor == codigoFornecedor &&
-        other.precoVendaVarejo == precoVendaVarejo &&
-        other.precoVendaAtacado == precoVendaAtacado &&
-        other.precoVendaPromocional == precoVendaPromocional &&
-        other.precoVendaIfood == precoVendaIfood &&
-        other.estoqueAtual == estoqueAtual &&
-        other.estoqueControlado == estoqueControlado &&
-        other.estoqueAtualF == estoqueAtualF &&
-        other.precoVendaVarejoF == precoVendaVarejoF &&
-        other.precoVendaAtacadoF == precoVendaAtacadoF &&
-        other.precoVendaPromocionalF == precoVendaPromocionalF &&
-        other.precoVendaIfoodF == precoVendaIfoodF &&
-        other.quantidadeSelecionada == quantidadeSelecionada;
+        other.preco == preco &&
+        other.estoqueControlado == estoqueControlado;
   }
 
   @override
@@ -236,23 +126,7 @@ class ProdutoVariacao {
         nomeCampoVarA.hashCode ^
         idVariacaoB.hashCode ^
         nomeCampoVarB.hashCode ^
-        idVariacaoC.hashCode ^
-        nomeCampoVarC.hashCode ^
-        f_1.hashCode ^
-        eanSistema.hashCode ^
-        eanFornecedor.hashCode ^
-        codigoFornecedor.hashCode ^
-        precoVendaVarejo.hashCode ^
-        precoVendaAtacado.hashCode ^
-        precoVendaPromocional.hashCode ^
-        precoVendaIfood.hashCode ^
-        estoqueAtual.hashCode ^
-        estoqueControlado.hashCode ^
-        estoqueAtualF.hashCode ^
-        precoVendaVarejoF.hashCode ^
-        precoVendaAtacadoF.hashCode ^
-        precoVendaPromocionalF.hashCode ^
-        precoVendaIfoodF.hashCode ^
-        quantidadeSelecionada.hashCode;
+        preco.hashCode ^
+        estoqueControlado.hashCode;
   }
 }

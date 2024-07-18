@@ -1046,6 +1046,14 @@ class Cupom {
         ).then((value) => () {
               Navigator.pop(context);
             });
+        //
+        // Nao funciona
+        // await Printing.directPrintPdf(
+        //   printer: const Printer(url: 'BlueTooth Printer', isDefault: true),
+        //   onLayout: (PdfPageFormat format) async => doc.save(),
+        //   format: impressaoTamanhoPapel == '58' ? PdfPageFormat.roll57 : PdfPageFormat.roll80,
+        //   name: 'FACILE',
+        // );
       } catch (e) {
         //facilePrintErro(context);
       }

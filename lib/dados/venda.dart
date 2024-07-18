@@ -54,6 +54,8 @@ class Venda {
   String nomeFuncionarioOperador;
   String nomeCargoFuncionarioOperador;
   String imagemFuncionarioComissionado;
+  String nomeTipoMovimento;
+  String corTipoMovimento;
   Venda({
     required this.id,
     required this.hash,
@@ -107,6 +109,8 @@ class Venda {
     required this.nomeFuncionarioOperador,
     required this.nomeCargoFuncionarioOperador,
     required this.imagemFuncionarioComissionado,
+    required this.nomeTipoMovimento,
+    required this.corTipoMovimento,
   });
 
   Venda copyWith({
@@ -162,6 +166,8 @@ class Venda {
     String? nomeFuncionarioOperador,
     String? nomeCargoFuncionarioOperador,
     String? imagemFuncionarioComissionado,
+    String? nomeTipoMovimento,
+    String? corTipoMovimento,
   }) {
     return Venda(
       id: id ?? this.id,
@@ -216,6 +222,8 @@ class Venda {
       nomeFuncionarioOperador: nomeFuncionarioOperador ?? this.nomeFuncionarioOperador,
       nomeCargoFuncionarioOperador: nomeCargoFuncionarioOperador ?? this.nomeCargoFuncionarioOperador,
       imagemFuncionarioComissionado: imagemFuncionarioComissionado ?? this.imagemFuncionarioComissionado,
+      nomeTipoMovimento: nomeTipoMovimento ?? this.nomeTipoMovimento,
+      corTipoMovimento: corTipoMovimento ?? this.corTipoMovimento,
     );
   }
 
@@ -273,6 +281,8 @@ class Venda {
       'nomeFuncionarioOperador': nomeFuncionarioOperador,
       'nomeCargoFuncionarioOperador': nomeCargoFuncionarioOperador,
       'imagemFuncionarioComissionado': imagemFuncionarioComissionado,
+      'nomeTipoMovimento': nomeTipoMovimento,
+      'corTipoMovimento': corTipoMovimento,
     };
   }
 
@@ -330,6 +340,8 @@ class Venda {
       nomeFuncionarioOperador: map['nomeFuncionarioOperador'] as String,
       nomeCargoFuncionarioOperador: map['nomeCargoFuncionarioOperador'] as String,
       imagemFuncionarioComissionado: map['imagemFuncionarioComissionado'] as String,
+      nomeTipoMovimento: map['nomeTipoMovimento'] as String,
+      corTipoMovimento: map['corTipoMovimento'] as String,
     );
   }
 
@@ -339,7 +351,7 @@ class Venda {
 
   @override
   String toString() {
-    return 'Venda(id: $id, hash: $hash, host: $host, dataCadastro: $dataCadastro, dataCadastroF: $dataCadastroF, horaCadastroF: $horaCadastroF, dataAlteracao: $dataAlteracao, dataAlteracaoF: $dataAlteracaoF, horaAlteracaoF: $horaAlteracaoF, idVenda: $idVenda, idPai: $idPai, idLoja: $idLoja, idEmpresa: $idEmpresa, idFuncionario: $idFuncionario, tipoMovimento: $tipoMovimento, origem: $origem, status: $status, f_1: $f_1, descricao: $descricao, cpfCnpj: $cpfCnpj, celular: $celular, email: $email, mesa: $mesa, idCliente: $idCliente, f_2: $f_2, acrescimo: $acrescimo, desconto: $desconto, devolucao: $devolucao, subTotal: $subTotal, total: $total, pagoDinheiro: $pagoDinheiro, pagoOutros: $pagoOutros, pago: $pago, troco: $troco, aPagar: $aPagar, f_3: $f_3, comissaoTotal: $comissaoTotal, idFuncionarioComissionado: $idFuncionarioComissionado, idSugestaoMeioPagamento: $idSugestaoMeioPagamento, nomeSugestaoMeioPagamento: $nomeSugestaoMeioPagamento, idVendaFiscal: $idVendaFiscal, nomeFuncionarioComissionado: $nomeFuncionarioComissionado, temPix: $temPix, temDinheiro: $temDinheiro, temCartao: $temCartao, serie: $serie, numero: $numero, nomeCliente: $nomeCliente, enderecoCliente: $enderecoCliente, nomeFuncionarioOperador: $nomeFuncionarioOperador, nomeCargoFuncionarioOperador: $nomeCargoFuncionarioOperador, imagemFuncionarioComissionado: $imagemFuncionarioComissionado)';
+    return 'Venda(id: $id, hash: $hash, host: $host, dataCadastro: $dataCadastro, dataCadastroF: $dataCadastroF, horaCadastroF: $horaCadastroF, dataAlteracao: $dataAlteracao, dataAlteracaoF: $dataAlteracaoF, horaAlteracaoF: $horaAlteracaoF, idVenda: $idVenda, idPai: $idPai, idLoja: $idLoja, idEmpresa: $idEmpresa, idFuncionario: $idFuncionario, tipoMovimento: $tipoMovimento, origem: $origem, status: $status, f_1: $f_1, descricao: $descricao, cpfCnpj: $cpfCnpj, celular: $celular, email: $email, mesa: $mesa, idCliente: $idCliente, f_2: $f_2, acrescimo: $acrescimo, desconto: $desconto, devolucao: $devolucao, subTotal: $subTotal, total: $total, pagoDinheiro: $pagoDinheiro, pagoOutros: $pagoOutros, pago: $pago, troco: $troco, aPagar: $aPagar, f_3: $f_3, comissaoTotal: $comissaoTotal, idFuncionarioComissionado: $idFuncionarioComissionado, idSugestaoMeioPagamento: $idSugestaoMeioPagamento, nomeSugestaoMeioPagamento: $nomeSugestaoMeioPagamento, idVendaFiscal: $idVendaFiscal, nomeFuncionarioComissionado: $nomeFuncionarioComissionado, temPix: $temPix, temDinheiro: $temDinheiro, temCartao: $temCartao, serie: $serie, numero: $numero, nomeCliente: $nomeCliente, enderecoCliente: $enderecoCliente, nomeFuncionarioOperador: $nomeFuncionarioOperador, nomeCargoFuncionarioOperador: $nomeCargoFuncionarioOperador, imagemFuncionarioComissionado: $imagemFuncionarioComissionado, nomeTipoMovimento: $nomeTipoMovimento, corTipoMovimento: $corTipoMovimento)';
   }
 
   @override
@@ -397,7 +409,9 @@ class Venda {
         other.enderecoCliente == enderecoCliente &&
         other.nomeFuncionarioOperador == nomeFuncionarioOperador &&
         other.nomeCargoFuncionarioOperador == nomeCargoFuncionarioOperador &&
-        other.imagemFuncionarioComissionado == imagemFuncionarioComissionado;
+        other.imagemFuncionarioComissionado == imagemFuncionarioComissionado &&
+        other.nomeTipoMovimento == nomeTipoMovimento &&
+        other.corTipoMovimento == corTipoMovimento;
   }
 
   @override
@@ -453,6 +467,8 @@ class Venda {
         enderecoCliente.hashCode ^
         nomeFuncionarioOperador.hashCode ^
         nomeCargoFuncionarioOperador.hashCode ^
-        imagemFuncionarioComissionado.hashCode;
+        imagemFuncionarioComissionado.hashCode ^
+        nomeTipoMovimento.hashCode ^
+        corTipoMovimento.hashCode;
   }
 }

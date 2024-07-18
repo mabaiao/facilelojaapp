@@ -13,6 +13,11 @@ import 'package:desktop_window/desktop_window.dart';
 import 'package:facilelojaapp/utiltema.dart';
 import 'package:facilelojaapp/utilusuario.dart';
 
+import 'dados/cargo.dart';
+import 'dados/funcionario.dart';
+import 'dados/lojafisica.dart';
+import 'dados/terminal.dart';
+
 void main() {
   /// **************************
   /// Previne a mudanca de cor
@@ -37,6 +42,11 @@ void main() {
 /// **************************
 /// Instancias
 ///
+
+LojaFisica? gLojaFisica;
+Terminal? gTerminal;
+Funcionario? gFuncionario;
+Cargo? gCargo;
 
 FacileUser gUsuario = FacileUser();
 FacileTheme gTema = FacileTheme();

@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:facilelojaapp/main.dart';
-import 'package:facilelojaapp/produtos.dart';
+// import 'package:facilelojaapp/produtos.dart';
 import 'package:facilelojaapp/profile.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
@@ -12,8 +12,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
-import 'caixa.dart';
-import 'filaatendimento.dart';
+//import 'caixa.dart.txt';
+// import 'filaatendimento.dart';
+import 'entradaprodutos.dart';
+import 'inventario.dart';
 import 'terminalconsulta.dart';
 
 class MenuPage extends StatefulWidget {
@@ -50,7 +52,7 @@ class _MenuPageState extends State<MenuPage> {
         Navigator.pop(context);
       }
       if (s == 'F2') {
-        goCaixa(context, CaixaModo.venda);
+        //goCaixa(context, CaixaModo.venda);
       }
       if (s == 'F3') {
         menuPedido(context);
@@ -142,7 +144,7 @@ class _MenuPageState extends State<MenuPage> {
                       getMaxSizedImagemProfile(context),
                     ),
                     child: Image.network(
-                      gUsuario.imagem,
+                      gFuncionario!.imagem,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -156,12 +158,12 @@ class _MenuPageState extends State<MenuPage> {
               children: [
                 Row(
                   children: [
-                    FacileTheme.headlineMedium(context, 'Olá ${gUsuario.primeiroNome}'),
+                    FacileTheme.headlineMedium(context, 'Olá ${gFuncionario!.nome}'),
                   ],
                 ),
                 Row(
                   children: [
-                    FacileTheme.displaySmall(context, gUsuario.nomeCargo),
+                    FacileTheme.displaySmall(context, gCargo!.nome),
                   ],
                 ),
               ],
@@ -173,7 +175,7 @@ class _MenuPageState extends State<MenuPage> {
 
     List<FormIconButton> listFormIconButton = [];
 
-    if (gDevice.isAndroid && (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger')) {
+    if (gDevice.isAndroid && (gCargo!.sigla == 'adm' || gCargo!.sigla == 'ads' || gCargo!.sigla == 'ger')) {
       listFormIconButton.add(
         FormIconButton(
           caption: getTextWindowsKey('Dash', 'F1'),
@@ -183,7 +185,7 @@ class _MenuPageState extends State<MenuPage> {
       );
     }
 
-    if (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger' || gUsuario.siglaCargo == 'ope') {
+    if (gCargo!.sigla == 'adm' || gCargo!.sigla == 'ads' || gCargo!.sigla == 'ger' || gCargo!.sigla == 'ope') {
       listFormIconButton.add(
         FormIconButton(
           caption: getTextWindowsKey('Caixa', 'F2'),
@@ -195,7 +197,7 @@ class _MenuPageState extends State<MenuPage> {
       );
     }
 
-    if (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger' || gUsuario.siglaCargo == 'ven') {
+    if (gCargo!.sigla == 'adm' || gCargo!.sigla == 'ads' || gCargo!.sigla == 'ger' || gCargo!.sigla == 'ven') {
       listFormIconButton.add(
         FormIconButton(
           caption: getTextWindowsKey('Pedidos', 'F3'),
@@ -232,13 +234,27 @@ class _MenuPageState extends State<MenuPage> {
       ),
     );
 
-    if (gDevice.isAndroid && (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger' || gUsuario.siglaCargo == 'inv')) {
-      //if ((gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger' || gUsuario.siglaCargo == 'inv')) {
+    if (gDevice.isAndroid && (gCargo!.sigla == 'adm' || gCargo!.sigla == 'ads' || gCargo!.sigla == 'ger' || gCargo!.sigla == 'inv')) {
+      //if ((gCargo!.sigla == 'adm' || gCargo!.sigla == 'ads' || gCargo!.sigla == 'ger' || gCargo!.sigla == 'inv')) {
       listFormIconButton.add(
         FormIconButton(
           caption: getTextWindowsKey('Inventário', 'F5'),
+          icon: Icons.qr_code_scanner_sharp,
+          onTap: () {
+            inventario(context);
+          },
+        ),
+      );
+    }
+
+    if (gDevice.isAndroid && (gCargo!.sigla == 'adm' || gCargo!.sigla == 'ads' || gCargo!.sigla == 'ger' || gCargo!.sigla == 'inv')) {
+      listFormIconButton.add(
+        FormIconButton(
+          caption: getTextWindowsKey('Entrada produtos', 'F5'),
           icon: Icons.inventory_outlined,
-          onTap: () {},
+          onTap: () {
+            entradaprodutos(context);
+          },
         ),
       );
     }
@@ -301,10 +317,12 @@ class _MenuPageState extends State<MenuPage> {
         width: getMaxSizedBoxWidth(context),
         height: getMaxSizedBoxHeight(context) *
             (gDevice.isTabletLandscape
-                ? 0.9
+                ? 0.85
                 : gDevice.isWindows
                     ? 1
-                    : 0.8),
+                    : gDevice.isPhoneSmall
+                        ? 0.75
+                        : 0.8),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: GridView.builder(
@@ -316,7 +334,7 @@ class _MenuPageState extends State<MenuPage> {
                         ? 3
                         : 3,
                 mainAxisSpacing: 5,
-                mainAxisExtent: gDevice.isTabletLandscape ? 150 : 170,
+                mainAxisExtent: gDevice.isTabletLandscape ? 170 : 170,
               ),
               itemCount: listFormIconButton.length,
               itemBuilder: (BuildContext context, int index) {
@@ -346,7 +364,7 @@ class _MenuPageState extends State<MenuPage> {
                   ),
                 );
 
-                if (index == 0 && gDevice.isAndroid && (gUsuario.siglaCargo == 'adm' || gUsuario.siglaCargo == 'ads' || gUsuario.siglaCargo == 'ger')) {
+                if (index == 0 && gDevice.isAndroid && (gCargo!.sigla == 'adm' || gCargo!.sigla == 'ads' || gCargo!.sigla == 'ger')) {
                   var gradient = const LinearGradient(
                     colors: [
                       Colors.orange,
@@ -465,33 +483,55 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  void goCaixa(context, CaixaModo modo) {
-    Navigator.push(
-      context,
-      CupertinoPageRoute(
-        builder: (context) => CaixaPage(modo: modo),
-      ),
-    ).then((value) {
-      //log('value=$value');
-    });
-  }
+  // void goCaixa(context, CaixaModo modo) {
+  // Navigator.push(
+  //   context,
+  //   CupertinoPageRoute(
+  //     builder: (context) => CaixaPage(modo: modo),
+  //   ),
+  // ).then((value) {
+  //   //log('value=$value');
+  // });
+  // }
 
   void goAtendimento(context) {
-    Navigator.push(
-      context,
-      CupertinoPageRoute(
-        builder: (context) => const FilaAtendimentoPage(),
-      ),
-    ).then((value) {
-      //log('value=$value');
-    });
+    // Navigator.push(
+    //   context,
+    //   CupertinoPageRoute(
+    //     builder: (context) => const FilaAtendimentoPage(),
+    //   ),
+    // ).then((value) {
+    //   //log('value=$value');
+    // });
   }
 
   void goProdutos(context) {
+    // Navigator.push(
+    //   context,
+    //   CupertinoPageRoute(
+    //     builder: (context) => const ProdutosPage(modo: ProdutosModo.editar, find: ''),
+    //   ),
+    // ).then((value) {
+    //   //log('value=$value');
+    // });
+  }
+
+  void inventario(context) {
     Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (context) => const ProdutosPage(modo: ProdutosModo.editar, find: ''),
+        builder: (context) => const InventarioPage(),
+      ),
+    ).then((value) {
+      //log('value=$value');
+    });
+  }
+
+  void entradaprodutos(context) {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => const EntradaProdutosPage(),
       ),
     ).then((value) {
       //log('value=$value');
@@ -510,98 +550,98 @@ class _MenuPageState extends State<MenuPage> {
   }
 
   void menuPedido(context) {
-    final action = CupertinoActionSheet(
-      title: FacileTheme.headlineSmall(context, 'SELECIONE A FORMA DE ATENDIMENTO'),
-      actions: <Widget>[
-        CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () async {
-            Navigator.pop(context);
-            goCaixa(context, CaixaModo.pedidoLoja);
-          },
-          child: Column(
-            children: [
-              const Icon(
-                Icons.store_outlined,
-                size: 48,
-              ),
-              FacileTheme.displayMedium(context, "ATENDIMENTO LOJA"),
-            ],
-          ),
-        ),
-        CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () async {
-            Navigator.pop(context);
-            goCaixa(context, CaixaModo.pedidoZap);
-          },
-          child: Column(
-            children: [
-              const Icon(
-                Icons.chat_outlined,
-                size: 48,
-              ),
-              FacileTheme.displayMedium(context, "ATENDIMENTO WHATSAPP"),
-            ],
-          ),
-        ),
-      ],
-      cancelButton: CupertinoActionSheetAction(
-        child: FacileTheme.displaySmall(context, 'CANCELA'),
-        onPressed: () {
-          Navigator.pop(context);
-        },
-      ),
-    );
+    // final action = CupertinoActionSheet(
+    //   title: FacileTheme.headlineSmall(context, 'SELECIONE A FORMA DE ATENDIMENTO'),
+    //   actions: <Widget>[
+    //     CupertinoActionSheetAction(
+    //       isDefaultAction: true,
+    //       onPressed: () async {
+    //         Navigator.pop(context);
+    //         goCaixa(context, CaixaModo.pedidoLoja);
+    //       },
+    //       child: Column(
+    //         children: [
+    //           const Icon(
+    //             Icons.store_outlined,
+    //             size: 48,
+    //           ),
+    //           FacileTheme.displayMedium(context, "ATENDIMENTO LOJA"),
+    //         ],
+    //       ),
+    //     ),
+    //     CupertinoActionSheetAction(
+    //       isDefaultAction: true,
+    //       onPressed: () async {
+    //         Navigator.pop(context);
+    //         goCaixa(context, CaixaModo.pedidoZap);
+    //       },
+    //       child: Column(
+    //         children: [
+    //           const Icon(
+    //             Icons.chat_outlined,
+    //             size: 48,
+    //           ),
+    //           FacileTheme.displayMedium(context, "ATENDIMENTO WHATSAPP"),
+    //         ],
+    //       ),
+    //     ),
+    //   ],
+    //   cancelButton: CupertinoActionSheetAction(
+    //     child: FacileTheme.displaySmall(context, 'CANCELA'),
+    //     onPressed: () {
+    //       Navigator.pop(context);
+    //     },
+    //   ),
+    // );
 
-    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
+    // showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
   }
 
   void menuCaixa(context) {
-    final action = CupertinoActionSheet(
-      title: FacileTheme.headlineSmall(context, 'SELECIONE A FORMA DE VENDA'),
-      actions: <Widget>[
-        CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () async {
-            Navigator.pop(context);
-            goCaixa(context, CaixaModo.venda);
-          },
-          child: Column(
-            children: [
-              const Icon(
-                Icons.person_2_outlined,
-                size: 48,
-              ),
-              FacileTheme.displayMedium(context, "DIRETO COM CLIENTE"),
-            ],
-          ),
-        ),
-        CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () async {
-            Navigator.pop(context);
-            goAtendimento(context);
-          },
-          child: Column(
-            children: [
-              const Icon(
-                Icons.groups_2_outlined,
-                size: 48,
-              ),
-              FacileTheme.displayMedium(context, "FILA DE ATENDIMENTO"),
-            ],
-          ),
-        ),
-      ],
-      cancelButton: CupertinoActionSheetAction(
-        child: FacileTheme.displaySmall(context, 'CANCELA'),
-        onPressed: () {
-          Navigator.pop(context);
-        },
-      ),
-    );
+    // final action = CupertinoActionSheet(
+    //   title: FacileTheme.headlineSmall(context, 'SELECIONE A FORMA DE VENDA'),
+    //   actions: <Widget>[
+    //     CupertinoActionSheetAction(
+    //       isDefaultAction: true,
+    //       onPressed: () async {
+    //         Navigator.pop(context);
+    //         goCaixa(context, CaixaModo.venda);
+    //       },
+    //       child: Column(
+    //         children: [
+    //           const Icon(
+    //             Icons.person_2_outlined,
+    //             size: 48,
+    //           ),
+    //           FacileTheme.displayMedium(context, "DIRETO COM CLIENTE"),
+    //         ],
+    //       ),
+    //     ),
+    //     CupertinoActionSheetAction(
+    //       isDefaultAction: true,
+    //       onPressed: () async {
+    //         Navigator.pop(context);
+    //         goAtendimento(context);
+    //       },
+    //       child: Column(
+    //         children: [
+    //           const Icon(
+    //             Icons.groups_2_outlined,
+    //             size: 48,
+    //           ),
+    //           FacileTheme.displayMedium(context, "FILA DE ATENDIMENTO"),
+    //         ],
+    //       ),
+    //     ),
+    //   ],
+    //   cancelButton: CupertinoActionSheetAction(
+    //     child: FacileTheme.displaySmall(context, 'CANCELA'),
+    //     onPressed: () {
+    //       Navigator.pop(context);
+    //     },
+    //   ),
+    // );
 
-    showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
+    // showCupertinoModalPopup(context: context, builder: (context) => action).then((value) {});
   }
 }

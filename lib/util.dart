@@ -459,24 +459,26 @@ void facileSnackBarError(context, caption, msg, {dur = 2000}) {
   // ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }
 
-PreferredSizeWidget? getCupertinoAppBar(context, caption, icons, {addClose = true, isBack = false}) {
+PreferredSizeWidget? getCupertinoAppBar(context, caption, icons, {addClose = true, isBack = false, isLoad = false}) {
   List<Widget> actions = [];
 
   for (var fab in icons) {
     Widget w = IconButton(
-      icon: Icon(fab.icon, size: gDevice.isWindows || gDevice.isTabletAll ? 32 : null),
-      color: Theme.of(context).colorScheme.primary,
-      onPressed: fab.onTap,
+      icon: Icon(fab.icon),
+      color: isLoad ? Colors.grey.withOpacity(0.9) : Theme.of(context).colorScheme.primary,
+      onPressed: isLoad ? () {} : fab.onTap,
     );
     actions.add(w);
   }
   if (addClose) {
     actions.add(IconButton(
-        icon: Icon(Icons.close, size: gDevice.isWindows || gDevice.isTabletAll ? 32 : null),
-        color: Theme.of(context).colorScheme.primary,
-        onPressed: () {
-          Navigator.pop(context);
-        }));
+        icon: const Icon(Icons.close),
+        color: isLoad ? Colors.grey.withOpacity(0.9) : Theme.of(context).colorScheme.primary,
+        onPressed: isLoad
+            ? () {}
+            : () {
+                Navigator.pop(context);
+              }));
   }
 
   return AppBar(
@@ -488,7 +490,7 @@ PreferredSizeWidget? getCupertinoAppBar(context, caption, icons, {addClose = tru
       },
       icon: Icon(
         isBack ? Icons.arrow_back_ios : Icons.expand_more_outlined,
-        color: Theme.of(context).colorScheme.primary,
+        color: isLoad ? Colors.grey.withOpacity(0.9) : Theme.of(context).colorScheme.primary,
       ),
     ),
     title: Row(
@@ -497,8 +499,8 @@ PreferredSizeWidget? getCupertinoAppBar(context, caption, icons, {addClose = tru
         gUsuario.imagem.isEmpty
             ? const SizedBox()
             : SizedBox(
-                width: 30,
-                height: 30,
+                width: gDevice.isTabletAll || gDevice.isWindows ? 60 : 30,
+                height: gDevice.isTabletAll || gDevice.isWindows ? 60 : 30,
                 child: ClipOval(
                   child: SizedBox.fromSize(
                     size: Size.fromRadius(
@@ -526,7 +528,7 @@ PreferredSizeWidget? getCupertinoAppBarCheck(context, caption, icons, isLoad, {a
 
   for (var fab in icons) {
     Widget w = IconButton(
-      icon: Icon(fab.icon, size: gDevice.isWindows || gDevice.isTabletAll ? 32 : null),
+      icon: Icon(fab.icon),
       color: isLoad ? Colors.grey : Theme.of(context).colorScheme.primary,
       onPressed: isLoad ? () {} : fab.onTap,
     );
@@ -536,7 +538,7 @@ PreferredSizeWidget? getCupertinoAppBarCheck(context, caption, icons, isLoad, {a
 
   if (addCheck) {
     actions.add(IconButton(
-        icon: Icon(Icons.check, size: gDevice.isWindows || gDevice.isTabletAll ? 32 : null),
+        icon: const Icon(Icons.check),
         color: isLoad ? Colors.grey : Theme.of(context).colorScheme.primary,
         onPressed: () {
           if (!isLoad) {
@@ -548,8 +550,8 @@ PreferredSizeWidget? getCupertinoAppBarCheck(context, caption, icons, isLoad, {a
   Widget wUsuario = gUsuario.imagem.isEmpty
       ? const SizedBox()
       : SizedBox(
-          width: 30,
-          height: 30,
+          width: gDevice.isTabletAll || gDevice.isWindows ? 60 : 30,
+          height: gDevice.isTabletAll || gDevice.isWindows ? 60 : 30,
           child: ClipOval(
             child: SizedBox.fromSize(
               size: Size.fromRadius(
@@ -674,6 +676,10 @@ class _ElevatedButtonExState extends State<ElevatedButtonEx> {
   }
 }
 
+String truncateString(String text, int maxLength) {
+  return text.length > maxLength ? '${text.substring(0, maxLength)}...' : text;
+}
+
 class ElevatedButtonNoIconEx extends StatefulWidget {
   final VoidCallback? onPressed;
   final String caption;
@@ -703,6 +709,7 @@ class _ElevatedButtonNoIconExState extends State<ElevatedButtonNoIconEx> {
           Text(
             widget.caption,
             maxLines: 1,
+            overflow: TextOverflow.fade,
           ),
         ],
       ),
@@ -777,7 +784,7 @@ Widget getStackCupertinoAlca(context, List<Widget> background, child, {showAlca 
             Icon(
               Icons.drag_handle_sharp,
               //color: Colors.bla,
-              size: 40,
+              //size: 40,
             ),
           ],
         ));

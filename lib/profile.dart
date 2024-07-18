@@ -13,6 +13,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'dados/funcionario.dart';
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -38,20 +40,18 @@ class _ProfilePageState extends State<ProfilePage> {
     List<Widget> w1 = [
       FacileTheme.headlineMedium(context, 'Aplicativo de vendas ${gUrlPost.versaoApp}'),
       FacileTheme.headlineSmall(context, gUrlPost.nomeVersaoApp, fontSize: 12),
-      FacileTheme.headlineLarge(context, gUsuario.nomeLojaFisica).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey),
-      FacileTheme.headlineMedium(context, gUsuario.nome),
-      FacileTheme.displaySmall(context, gUsuario.nomeCargo),
+      FacileTheme.headlineLarge(context, gLojaFisica!.nome).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey),
+      FacileTheme.headlineMedium(context, gFuncionario!.nome),
+      FacileTheme.displaySmall(context, gCargo!.nome),
       FacileTheme.headlineMedium(context, 'TERMINAL'),
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FacileTheme.displaySmall(context, gUsuario.terminalHost),
-          const Text(' / '),
-          FacileTheme.displaySmall(context, gUsuario.terminalNome),
+          FacileTheme.displaySmall(context, gTerminal!.terminal),
         ],
       ),
       FacileTheme.headlineMedium(context, 'DISPOSITIVO'),
-      FacileTheme.displaySmall(context, gUsuario.host),
+      FacileTheme.displaySmall(context, gTerminal!.hostTerminal),
       getEspacadorDuplo(),
     ];
 
@@ -82,7 +82,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   getMaxSizedImagemProfile(context) * 4,
                 ),
                 child: Image.network(
-                  gUsuario.imagem,
+                  gFuncionario!.imagem,
                   fit: BoxFit.cover,
                 ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 3400.ms, duration: 1000.ms, color: Colors.white.withOpacity(.1)),
               ),
@@ -154,7 +154,7 @@ class _ProfilePageState extends State<ProfilePage> {
           onPressed: () async {
             isLoad = true;
             Navigator.pop(context);
-            getImageFromDevice(context, ImageSource.camera, gUsuario.idFuncionario);
+            getImageFromDevice(context, ImageSource.camera, gFuncionario!.id.toString());
           },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -171,7 +171,7 @@ class _ProfilePageState extends State<ProfilePage> {
           isDefaultAction: false,
           onPressed: () async {
             Navigator.pop(context);
-            getImageFromDevice(context, ImageSource.gallery, gUsuario.idFuncionario);
+            getImageFromDevice(context, ImageSource.gallery, gFuncionario!.id.toString());
           },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -213,32 +213,28 @@ class _ProfilePageState extends State<ProfilePage> {
 
       String baseimage = base64Encode(fileBytes);
 
-      debugPrint(image.name);
-      debugPrint(image.path);
-      debugPrint('size:${baseimage.length}');
-
       ///
       ///Envio
       ///
       Map<String, String> params = {
-        'Funcao': 'AtualizaFoto',
-        'fileName': image.name,
         'fileBytes': baseimage,
+        'fileName': image.name,
         'largura': decodedImage.width.toString(),
         'altura': decodedImage.height.toString(),
       };
 
-      var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: true);
+      FacileResponse response = await facileRouter(context, '/gadget/atualizarimagem', params, showProc: true, addParam: true);
 
+      Iterable v;
+      v = await response.getMap('funcionario');
       isLoad = false;
-      if (aResult == null) {
-      } else if (aResult != null && aResult['Status'] == 'OK') {
-        gUsuario.imagem = aResult['novaImagem'];
+      if (response.isOk()) {
+        gFuncionario = Funcionario.fromMap(v.first);
         if (mounted) {
           setState(() {});
         }
       } else {
-        facileSnackBarError(context, 'Ops!', aResult['Msg']);
+        facileSnackBarError(context, 'Ops!', response.descricao);
       }
     }
   }

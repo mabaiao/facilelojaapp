@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:facilelojaapp/dados/produtovariacao.dart';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
@@ -52,10 +53,10 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
     });
   }
 
-  void onFocusKey(context, RawKeyEvent event) {
+  void onFocusKey(context, KeyEvent event) {
     var s = event.logicalKey.keyLabel.toString().replaceAll('Numpad ', '').replaceAll('Digit ', '').replaceAll('Key ', '').replaceAll('Space', ' ');
 
-    if (event.runtimeType == RawKeyDownEvent) {
+    if (event.runtimeType == KeyDownEvent) {
       debugPrint('RegistroPage::onFocusKey::$s');
 
       if (s == 'Escape') {
@@ -63,8 +64,10 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
       } else if (s == 'Enter' && codigo.isNotEmpty) {
         buscarProdutoPorEan(context);
       } else if (' 01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'.contains(s)) {
-        codigo += s;
-        setState(() {});
+        if (!exibindo) {
+          codigo += s;
+          setState(() {});
+        }
       }
     }
   }
@@ -139,7 +142,7 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
 
     return Focus(
       autofocus: true,
-      onKey: (node, event) {
+      onKeyEvent: (node, event) {
         onFocusKey(context, event);
         setState(() {});
         return KeyEventResult.ignored;
@@ -158,33 +161,6 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
     );
   }
 
-  // void consulta(context) async {
-  //   ///
-  //   /// Le os dados da venda
-  //   ///
-
-  //   Map<String, String> params = {
-  //     'Funcao': 'VendaLe',
-  //   };
-
-  //   var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: false);
-
-  //   if (aResult == null) {
-  //   } else if (aResult != null && aResult['Status'] == 'OK') {
-  //     if (mounted) {
-  //       setState(() {
-  //         isLoad = false;
-  //       });
-  //     }
-
-  //     ///
-  //     ///
-  //     ///
-  //   } else {
-  //     facileSnackBarError(context, 'Ops!', aResult['Msg']);
-  //   }
-  // }
-
   Future<void> buscarProdutoPorEan(context) async {
     if (codigo.isEmpty || exibindo) {
       return;
@@ -196,62 +172,55 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
     log('buscando...$codigo');
 
     Map<String, String> params = {
-      'Funcao': 'ListagemProdutos',
-      'Modo': 'listar',
-      'nome': codigo,
+      'busca': codigo,
     };
 
-    var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: false);
+    FacileResponse response = await facileRouter(context, '/gadget/consultapreco', params, showProc: true, addParam: true);
 
-    if (aResult == null) {
-    } else if (aResult != null && aResult['Status'] == 'OK') {
-      Iterable vProduto = await aResult['listProdutos'];
-      var listProdutos = vProduto.map((model) => Produto.fromMap(model)).toList();
+    if (response.isOk()) {
+      Iterable v;
+      v = await response.getMap('produto');
+      Produto produto = Produto.fromMap(v.first);
 
-      if (listProdutos.isEmpty) {
-        gDevice.beepErr();
-      } else {
-        gDevice.beep();
+      v = await response.getMap('variacao');
+      ProdutoVariacao variacao = ProdutoVariacao.fromMap(v.first);
 
-        var produto = listProdutos.first;
+      gDevice.beep();
 
-        nomeProduto = produto.nome;
-        precoProduto = produto.precoVendaVarejoF;
+      nomeProduto = produto.nome;
+      precoProduto = variacao.preco.toStringAsFixed(2);
 
-        // Iterable vVariacoes = jsonDecode(produto.variacoes);
-        // var variacoes = vVariacoes.map((model) => ProdutoVariacao.fromMap(model)).toList();
-        ///
-        /// precisa ver as variacoes aqui
-        ///
-
-        Timer(3000.ms, () {
-          if (mounted) {
-            setState(() {
-              piscando = true;
-            });
-          }
-        });
-
-        Timer(5000.ms, () {
-          if (mounted) {
-            setState(() {
-              exibindo = false;
-              piscando = false;
-            });
-          }
-        });
-
+      Timer(3000.ms, () {
         if (mounted) {
           setState(() {
-            exibindo = true;
+            piscando = true;
           });
         }
+      });
+
+      Timer(5000.ms, () {
+        if (mounted) {
+          setState(() {
+            exibindo = false;
+            piscando = false;
+          });
+        }
+      });
+
+      if (mounted) {
+        setState(() {
+          exibindo = true;
+        });
       }
-      codigo = '';
     } else {
-      facileSnackBarError(context, 'Ops!', aResult['Msg'], dur: 500);
       gDevice.beepErr();
-      codigo = '';
+      facileSnackBarError(context, 'Ops!', response.descricao);
+    }
+
+    if (mounted) {
+      setState(() {
+        codigo = '';
+      });
     }
   }
 }

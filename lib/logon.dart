@@ -1,16 +1,18 @@
 import 'dart:developer';
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:facilelojaapp/utilpost.dart';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_svg/svg.dart';
+
+import 'dados/cargo.dart';
+import 'dados/funcionario.dart';
+import 'dados/lojafisica.dart';
+import 'dados/terminal.dart';
 
 /// **************************
 /// Logon
@@ -231,61 +233,58 @@ class _LogonState extends State<LogonPage> {
       facileSnackBarError(context, 'Ops!', 'Informe seu Pin com 6 digitos !');
       return;
     }
-    String host = '';
-
-    try {
-      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-
-      if (kIsWeb) {
-        WebBrowserInfo webBrowserInfo = await deviceInfo.webBrowserInfo;
-        host = webBrowserInfo.browserName.toString();
-      } else if (Platform.isAndroid) {
-        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-        host = androidInfo.host.toString();
-      } else if (Platform.isWindows) {
-        WindowsDeviceInfo windowsInfo = await deviceInfo.windowsInfo;
-        host = windowsInfo.computerName.toString();
-      }
-    } catch (e) {
-      host = 'unico';
-    }
-
-    debugPrint('host::$host');
 
     Map<String, String> params = {
-      'Funcao': 'Logon',
-      'Pin': senha,
+      'pin': senha,
     };
 
-    var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: true);
+    FacileResponse response = await facileRouter(context, '/gadget/autorizar', params, showProc: true, addParam: true);
 
-    if (aResult == null) {
-    } else if (aResult != null && aResult['Status'] == 'OK') {
+    if (response.isOk()) {
       facileSnackBarSucess(
         context,
         'Show!',
-        aResult['Msg'],
+        response.descricao,
         onThen: () {
           Navigator.pop(context, 'ok');
         },
       );
 
+      Iterable v;
+
+      ///
+      /// Nao é necessario fazr list para registro simples
+      ///
+      v = await response.getMap('terminal');
+      gTerminal = Terminal.fromMap(v.first);
+
+      v = await response.getMap('lojaFisica');
+      gLojaFisica = LojaFisica.fromMap(v.first);
+
+      v = await response.getMap('cargo');
+      gCargo = Cargo.fromMap(v.first);
+
+      v = await response.getMap('funcionario');
+      gFuncionario = Funcionario.fromMap(v.first);
+
+      //gUsuario.terminaisImpressao = aResult['terminaisImpressao'];
       gUsuario.pin = senha;
-      gUsuario.nomeLojaFisica = aResult['nomeLojaFisica'];
-      gUsuario.terminalImpressao = aResult['terminalImpressao'];
-      gUsuario.terminaisImpressao = aResult['terminaisImpressao'];
-      gUsuario.idEmpresa = aResult['idEmpresa'];
-      gUsuario.idFuncionario = aResult['idFuncionario'];
-      gUsuario.primeiroNome = aResult['primeiroNome'];
-      gUsuario.nome = aResult['nome'];
-      gUsuario.imagem = aResult['imagem'];
-      gUsuario.idCargo = aResult['idCargo'];
-      gUsuario.siglaCargo = aResult['siglaCargo'];
-      gUsuario.nomeCargo = aResult['nomeCargo'];
+      gUsuario.idEmpresa = await response.getResult('idEmpresa', 'data');
+      gUsuario.nomeLojaFisica = await response.getResult('nomeLojaFisica', 'data');
+      gUsuario.terminalImpressao = await response.getResult('terminalImpressao', 'data');
+      gUsuario.terminalNome = await response.getResult('terminal', 'data');
+      gUsuario.terminalHost = await response.getResult('hostTerminal', 'data');
+      gUsuario.idFuncionario = await response.getResult('idFuncionario', 'data');
+      gUsuario.primeiroNome = await response.getResult('primeiroNome', 'data');
+      gUsuario.nome = await response.getResult('nome', 'data');
+      gUsuario.imagem = await response.getResult('imagem', 'data');
+      gUsuario.idCargo = await response.getResult('idCargo', 'data');
+      gUsuario.siglaCargo = await response.getResult('siglaCargo', 'data');
+      gUsuario.nomeCargo = await response.getResult('nomeCargo', 'data');
       gUsuario.update();
-      gParametros.load(context);
+      //gParametros.load(context);
     } else {
-      facileSnackBarError(context, 'Ops!', aResult['Msg']);
+      facileSnackBarError(context, 'Ops!', response.descricao);
     }
   }
 }

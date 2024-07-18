@@ -166,34 +166,32 @@ class _RegistroState extends State<RegistroPage> {
     String host = gDevice.host;
 
     Map<String, String> params = {
-      'Subdominio': controllerApelidoValidador.text.toLowerCase(),
-      'Funcao': 'Registra',
-      'pinInstalacaoTerminal': controllerSenhaValidador.text,
+      'subdominio': controllerApelidoValidador.text.toLowerCase().trim(),
+      'pinInstalacaoTerminal': controllerSenhaValidador.text.trim(),
       'hostTerminal': host,
     };
 
-    var aResult = await facilePostEx(context, 'facileFlutterApp.php', params, showProc: true, addParam: false);
+    FacileResponse response = await facileRouter(context, '/gadget/registrardispositivo', params, showProc: true, addParam: false);
 
-    if (aResult == null) {
-    } else if (aResult != null && aResult['Status'] == 'OK') {
+    if (response.isOk()) {
       gUsuario.subdominio = controllerApelidoValidador.text.toLowerCase();
-      gUsuario.idLojaFisica = aResult['idLojaFisica'];
-      gUsuario.terminalId = aResult['terminalId'];
-      gUsuario.terminalHost = aResult['terminalHost'];
-      gUsuario.terminalNome = aResult['terminalNome'];
+      gUsuario.idLojaFisica = await response.getResult('idLojaFisica', 'data');
+      gUsuario.terminalId = await response.getResult('id', 'data');
+      gUsuario.terminalHost = await response.getResult('hostTerminal', 'data');
+      gUsuario.terminalNome = await response.getResult('terminal', 'data');
       gUsuario.host = host;
       gUsuario.update();
 
       facileSnackBarSucess(
         context,
         'Show!',
-        aResult['Msg'],
+        response.descricao,
         onThen: () {
           Navigator.pop(context);
         },
       );
     } else {
-      facileSnackBarError(context, 'Ops!', aResult['Msg']);
+      facileSnackBarError(context, 'Ops!', response.descricao);
     }
   }
 }
