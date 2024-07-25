@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ModalBottomSheetRoute;
 import 'package:flutter/services.dart';
 import 'dados/inventariolog.dart';
 import 'utilpost.dart';

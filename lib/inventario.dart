@@ -1,18 +1,16 @@
 import 'dart:async';
-import 'dart:developer';
-
+import 'dart:io';
 import 'package:facilelojaapp/dados/lojafisica.dart';
 import 'package:facilelojaapp/dados/produtovariacao.dart';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ModalBottomSheetRoute;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'dados/inventario.dart';
 import 'dados/produto.dart';
 import 'inventariolog.dart';
@@ -48,6 +46,10 @@ class _InventarioState extends State<InventarioPage> {
   LojaFisica? lojaSelecionada;
   Inventario? inventarioSelecionado;
 
+  final FocusNode _focusNode = FocusNode();
+  bool leitorPorText = Platform.isAndroid && double.parse(gDevice.release) < 10;
+  final TextEditingController controllerEan = TextEditingController();
+
   int quantidade = 0;
   int estoqueAtual = 0;
 
@@ -59,6 +61,7 @@ class _InventarioState extends State<InventarioPage> {
 
   @override
   void dispose() {
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -92,6 +95,10 @@ class _InventarioState extends State<InventarioPage> {
   }
 
   void onFocusKey(context, KeyEvent event) {
+    if (leitorPorText) {
+      return;
+    }
+
     var s = event.logicalKey.keyLabel.toString().replaceAll('Numpad ', '').replaceAll('Digit ', '').replaceAll('Key ', '').replaceAll('Space', ' ');
 
     if (event.runtimeType == KeyDownEvent) {
@@ -128,14 +135,13 @@ class _InventarioState extends State<InventarioPage> {
           }));
     }
 
-    if (inventarioSelecionado != null) {
-      listIconButton.add(FormIconButton(
-        icon: Icons.barcode_reader,
-        caption: getTextWindowsKey(gDevice.isPhoneAll ? '' : 'Scanner', 'F3'),
-        onTap: () {
-          verLogs(context);
-        },
-      ));
+    if (inventarioSelecionado != null && modo == ModoInventario.coletando) {
+      listFloatingActionButton.add(FormFloatingActionButton(
+          icon: Icons.barcode_reader,
+          caption: getTextWindowsKey((gDevice.isWindows ? 'VOLTAR' : 'CONFERIR'), 'ESC'),
+          onTap: () {
+            verLogs(context);
+          }));
     }
 
     List<Widget> w1 = [];
@@ -149,7 +155,9 @@ class _InventarioState extends State<InventarioPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FacileTheme.headlineLarge(context, 'NENHUMA LOJA DISPONÍVEL PARA COLETA !'),
+            Expanded(
+              child: FacileTheme.headlineLarge(context, 'NENHUMA LOJA DISPONÍVEL PARA COLETA !'),
+            ),
           ],
         ),
       ];
@@ -214,8 +222,51 @@ class _InventarioState extends State<InventarioPage> {
                       .move(duration: 1000.ms)),
         ),
       ];
+
+      Widget winput = const SizedBox();
+
+      if (leitorPorText) {
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+        FocusScope.of(context).hasPrimaryFocus;
+
+        winput = TextField(
+          onSubmitted: (value) {
+            codigo = controllerEan.text;
+            controllerEan.text = '';
+            buscarProdutoPorEan(context);
+          },
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(80),
+          ],
+          autofocus: true,
+          focusNode: _focusNode,
+          controller: controllerEan,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(CupertinoIcons.barcode),
+            hintText: 'Código de barras...',
+            label: Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  WidgetSpan(
+                    child: Text(
+                      'Ean do produto',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        _focusNode.requestFocus();
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+        FocusScope.of(context).hasPrimaryFocus;
+      }
+
       w2 = [
         FacileTheme.headlineLarge(context, 'PASSE O LEITOR', fontSize: gDevice.isTabletAll ? 40 : 30).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 1000.ms, color: Colors.grey),
+        winput,
       ];
 
       listFloatingActionButton.add(FormFloatingActionButton(

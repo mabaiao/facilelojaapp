@@ -9,7 +9,7 @@ import 'package:facilelojaapp/registro.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ModalBottomSheetRoute;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';

@@ -8,7 +8,7 @@ import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utilpost.dart';
 import 'package:facilelojaapp/utiltema.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ModalBottomSheetRoute;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
@@ -38,6 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     List<Widget> w1 = [
+      Platform.isAndroid && double.parse(gDevice.release) < 10 ? FacileTheme.headlineSmall(context, 'Release ${gDevice.release}') : const SizedBox(),
       FacileTheme.headlineMedium(context, 'Aplicativo de vendas ${gUrlPost.versaoApp}'),
       FacileTheme.headlineSmall(context, gUrlPost.nomeVersaoApp, fontSize: 12),
       FacileTheme.headlineLarge(context, gLojaFisica!.nome).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 4000.ms, color: Colors.grey),
@@ -108,7 +109,7 @@ class _ProfilePageState extends State<ProfilePage> {
         },
         child: SafeArea(
           child: Scaffold(
-            appBar: getCupertinoAppBar(context, 'PROFILE', []),
+            appBar: getCupertinoAppBar(context, 'PROFILE', [], isBack: true),
             body: getStackCupertino(
               context,
               getBackgroundColor(context, minimize: true),

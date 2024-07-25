@@ -6,7 +6,7 @@ import 'package:facilelojaapp/util/device.dart';
 import 'package:facilelojaapp/utilparametros.dart';
 import 'package:facilelojaapp/utilpost.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ModalBottomSheetRoute;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:desktop_window/desktop_window.dart';

@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:beep_player/beep_player.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ModalBottomSheetRoute;
 
 import '../dados/filaimpresao.dart';
 import '../utilpost.dart';
@@ -33,6 +33,8 @@ class FacileDevice {
   double sizeWidth = 0;
   double sizeHeight = 0;
 
+  String release = '';
+
   FacileDevice();
 
   Future<void> load(context) async {
@@ -40,6 +42,7 @@ class FacileDevice {
     isAndroid = false;
     isWeb = false;
     host = '';
+    release = '';
 
     if (!Platform.isWindows) {
       BeepPlayer.load(_beepFile);
@@ -56,6 +59,7 @@ class FacileDevice {
       } else if (Platform.isAndroid) {
         AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
         host = androidInfo.host.toString();
+        release = androidInfo.version.release;
         isAndroid = true;
       } else if (Platform.isWindows) {
         WindowsDeviceInfo windowsInfo = await deviceInfo.windowsInfo;
@@ -85,7 +89,7 @@ class FacileDevice {
     sizeWidth = x.width;
     sizeHeight = x.height;
 
-    if (data.size.width <= 360 && data.size.height <= 592) {
+    if (data.size.width <= 360 && data.size.height <= 620) {
       // maquininha
       isPhoneSmall = true;
       isPhoneAll = true;
@@ -109,6 +113,7 @@ class FacileDevice {
   void print() {
     log('DEVICE::isWindows::$isWindows');
     log('DEVICE::isAndroid::$isAndroid');
+    log('DEVICE::release::$release');
     log('DEVICE::isWeb::$isWeb');
     log('DEVICE::host::$host');
     log('DEVICE::isPhoneSmall::$isPhoneSmall');

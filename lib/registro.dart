@@ -3,7 +3,7 @@ import 'package:facilelojaapp/utilpost.dart';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ModalBottomSheetRoute;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_svg/flutter_svg.dart';

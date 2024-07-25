@@ -164,10 +164,15 @@ showSimNao(BuildContext context, String caption, String msg, VoidCallback onOk) 
           alignment: WrapAlignment.center,
           children: [
             msg != ''
-                ? Icon(
-                    Icons.announcement,
-                    size: 70,
-                    color: Theme.of(context).colorScheme.error,
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.announcement,
+                        size: 70,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ],
                   )
                 : const SizedBox(),
             msg != '' ? FacileTheme.headlineSmall(context, msg) : const SizedBox(),
@@ -317,11 +322,13 @@ showAlertSuccess(
   showDialog(
     context: context,
     builder: (BuildContext context) {
-      Timer(Duration(milliseconds: dur), () {
-        if (context.mounted) {
-          Navigator.pop(context);
-        }
-      });
+      if (dur > 0) {
+        Timer(Duration(milliseconds: dur), () {
+          if (context.mounted) {
+            Navigator.pop(context);
+          }
+        });
+      }
 
       return alert;
     },
@@ -720,15 +727,15 @@ class _ElevatedButtonNoIconExState extends State<ElevatedButtonNoIconEx> {
 Widget getCard(BuildContext context, wchild, {cardSuave = false}) {
   var gradient = LinearGradient(
     colors: [
-      // (gTema.modo == 'dark' ? getColorPrimary(context).withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
-      // (gTema.modo == 'dark' ? FacileTheme.getColorButton(context).withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
-      // (gTema.modo == 'dark' ? FacileTheme.getColorButton(context).withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
-      // (gTema.modo == 'dark' ? getColorPrimary(context).withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
+      (gTema.modo == 'dark' ? FacileTheme.getColorPrimary(context).withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
+      (gTema.modo == 'dark' ? FacileTheme.getColorButton(context).withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
+      (gTema.modo == 'dark' ? FacileTheme.getColorButton(context).withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
+      (gTema.modo == 'dark' ? FacileTheme.getColorPrimary(context).withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
 
-      (gTema.modo == 'dark' ? Colors.white.withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
-      (gTema.modo == 'dark' ? Colors.white.withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
-      (gTema.modo == 'dark' ? Colors.white.withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
-      (gTema.modo == 'dark' ? Colors.white.withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
+      // (gTema.modo == 'dark' ? Colors.white.withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
+      // (gTema.modo == 'dark' ? Colors.white.withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
+      // (gTema.modo == 'dark' ? Colors.white.withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
+      // (gTema.modo == 'dark' ? Colors.white.withOpacity(0.1) : Colors.grey.shade200.withOpacity(0.5)),
 
       // (gTema.modo == 'dark' ? getColorPrimary(context).withOpacity(0.1) : FacileTheme.getColorButton(context).withOpacity(0.1)),
       // (gTema.modo == 'dark' ? FacileTheme.getColorButton(context).withOpacity(0.1) : getColorPrimary(context).withOpacity(0.1)),
@@ -1018,8 +1025,10 @@ Widget getBall(context, int max) {
     colors: [
       //Theme.of(context).colorScheme.onPrimaryContainer,
       //FacileTheme.getColorButton(context),
-      Colors.grey,
-      Colors.grey.shade200,
+      // Colors.grey,
+      // Colors.grey.shade200,
+      FacileTheme.getColorButton(context),
+      FacileTheme.getColorHard(context),
       //getColorPrimary(context),
       //Colors.grey.shade100,
       //Colors.grey,
@@ -1042,7 +1051,7 @@ Widget getBall(context, int max) {
     top: Random().nextInt(MediaQuery.of(context).size.height.toInt()).toDouble(),
     left: Random().nextInt(MediaQuery.of(context).size.width.toInt()).toDouble(),
     child: Opacity(
-      opacity: .7,
+      opacity: .4,
       child: facileDelayedDisplayB(
         Container(
           height: size,
@@ -1179,9 +1188,20 @@ Widget getBody(context, List<Widget> w1, List<Widget> w2, {mainAxisAlignment = M
             ))
         : getCard(
             context,
-            Column(
-              mainAxisAlignment: mainAxisAlignment,
-              children: (w1 + w2),
+            Stack(
+              children: [
+                Positioned(
+                  bottom: 2,
+                  child: Opacity(
+                    opacity: .4,
+                    child: FacileTheme.displaySmall(context, gLojaFisica == null ? '' : gLojaFisica!.nome),
+                  ),
+                ),
+                Column(
+                  mainAxisAlignment: mainAxisAlignment,
+                  children: (w1 + w2),
+                ),
+              ],
             ),
             cardSuave: cardSuave)),
   );

@@ -7,7 +7,7 @@ import 'package:facilelojaapp/profile.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ModalBottomSheetRoute;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
@@ -126,15 +126,24 @@ class _MenuPageState extends State<MenuPage> {
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: () async {
-                showCupertinoModalBottomSheet(
-                  duration: getCupertinoModalBottomSheetDuration(),
-                  context: context,
-                  builder: (context) => const ProfilePage(),
-                ).then(
-                  (value) {
-                    setState(() {});
-                  },
-                );
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (context) => const ProfilePage(),
+                  ),
+                ).then((value) {
+                  //log('value=$value');
+                });
+
+                // showCupertinoModalBottomSheet(
+                //   duration: getCupertinoModalBottomSheetDuration(),
+                //   context: context,
+                //   builder: (context) => const ProfilePage(),
+                // ).then(
+                //   (value) {
+                //     setState(() {});
+                //   },
+                // );
               },
               child: Hero(
                 tag: 'imageProfile',

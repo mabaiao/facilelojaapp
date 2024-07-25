@@ -229,7 +229,7 @@ Future<dynamic> facileRouter(
   /// Url obtida pela classe FacilePost no arquivo facile.ini
   ///
 
-  var url = Uri.parse("${gUrlPost.url}/$uri");
+  var url = Uri.parse("${gUrlPost.url}$uri");
 
   log('POST::prg::$url');
   log('POST::params::$params');
@@ -301,7 +301,19 @@ Future<dynamic> facileRouter(
       /// Falha
       ///
 
+      if (showProc) {
+        Navigator.pop(context);
+      }
+
       msg = 'Conexão de internet indisponível (!200), tente novamente !';
+      var result = FacileResponse(
+        status: 'erro',
+        titulo: 'Erro',
+        descricao: msg,
+        result: {},
+      );
+
+      return result;
     }
   } on SocketException {
     msg = 'Sem conexão de internet (SocketException) !';
@@ -323,5 +335,12 @@ Future<dynamic> facileRouter(
 
   showAlertError(context, 'INTERNET', msg);
 
-  return null;
+  var result = FacileResponse(
+    status: 'erro',
+    titulo: 'Erro',
+    descricao: msg,
+    result: {},
+  );
+
+  return result;
 }

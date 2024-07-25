@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:facilelojaapp/dados/produtovariacao.dart';
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/util.dart';
 import 'package:facilelojaapp/utiltema.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ModalBottomSheetRoute;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_svg/svg.dart';
@@ -27,20 +28,25 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
 
   bool isLoad = true;
   late String codigo = '';
+  late String saldoProduto = '';
   late String nomeProduto = '';
   late String precoProduto = '';
   bool exibindo = false;
   bool piscando = false;
 
+  final FocusNode _focusNode = FocusNode();
+  bool leitorPorText = Platform.isAndroid && double.parse(gDevice.release) < 10;
+  final TextEditingController controllerEan = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-
     load(context);
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -54,14 +60,18 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
   }
 
   void onFocusKey(context, KeyEvent event) {
+    if (leitorPorText) {
+      return;
+    }
+
     var s = event.logicalKey.keyLabel.toString().replaceAll('Numpad ', '').replaceAll('Digit ', '').replaceAll('Key ', '').replaceAll('Space', ' ');
 
     if (event.runtimeType == KeyDownEvent) {
-      debugPrint('RegistroPage::onFocusKey::$s');
-
+      log('RegistroPage::onFocusKey2::$s');
       if (s == 'Escape') {
         Navigator.pop(context);
-      } else if (s == 'Enter' && codigo.isNotEmpty) {
+      } else if ((s == 'Enter') && codigo.isNotEmpty) {
+        log('RegistroPage::codigo::OK');
         buscarProdutoPorEan(context);
       } else if (' 01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'.contains(s)) {
         if (!exibindo) {
@@ -111,9 +121,17 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
       ),
     ];
 
-    Widget wnome =
-        FacileTheme.headlineLarge(context, 'PASSE O LEITOR', fontSize: gDevice.isTabletAll ? 40 : 30).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 1000.ms, color: Colors.grey);
+    Widget wnome = FacileTheme.headlineLarge(
+      context,
+      'PASSE O LEITOR',
+      fontSize: gDevice.isTabletAll ? 40 : 30,
+    ).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 1000.ms, color: Colors.grey);
     Widget wpreco = const SizedBox();
+    Widget wsaldo = const SizedBox();
+    Widget winput = const SizedBox();
+
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
+    FocusScope.of(context).hasPrimaryFocus;
 
     if (exibindo) {
       if (piscando) {
@@ -127,18 +145,68 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
               onPlay: (controller) => controller.repeat(reverse: true),
             )
             .fadeOut(curve: Curves.easeInOut);
+        wsaldo = FacileTheme.headlineSmall(context, 'Estoque: $saldoProduto', fontSize: gDevice.isTabletAll ? 70 : 50)
+            .animate(
+              onPlay: (controller) => controller.repeat(reverse: true),
+            )
+            .fadeOut(curve: Curves.easeInOut);
       } else {
         wnome = FacileTheme.headlineLarge(context, nomeProduto, fontSize: gDevice.isTabletAll ? 40 : 30).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 1000.ms, color: Colors.grey);
         wpreco =
             FacileTheme.headlineLarge(context, precoProduto, fontSize: gDevice.isTabletAll ? 100 : 70).animate(onPlay: (controller) => controller.repeat()).shimmer(delay: 400.ms, duration: 1000.ms, color: Colors.grey);
+        wsaldo = FacileTheme.headlineSmall(context, 'Estoque: $saldoProduto', fontSize: gDevice.isTabletAll ? 70 : 50)
+            .animate(onPlay: (controller) => controller.repeat())
+            .shimmer(delay: 400.ms, duration: 1000.ms, color: Colors.grey);
+      }
+    } else {
+      if (leitorPorText) {
+        winput = TextField(
+          onSubmitted: (value) {
+            codigo = controllerEan.text;
+            controllerEan.text = '';
+            buscarProdutoPorEan(context);
+          },
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(80),
+          ],
+          autofocus: true,
+          focusNode: _focusNode,
+          controller: controllerEan,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(CupertinoIcons.barcode),
+            hintText: 'Código de barras...',
+            label: Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  WidgetSpan(
+                    child: Text(
+                      'Ean do produto',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        _focusNode.requestFocus();
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+        FocusScope.of(context).hasPrimaryFocus;
       }
     }
 
     List<Widget> w2 = [
       wnome,
-      exibindo ? const SizedBox() : FacileTheme.headlineLarge(context, codigo),
+      winput,
+      //exibindo ? const SizedBox() : FacileTheme.headlineLarge(context, codigo),
       wpreco,
+      wsaldo,
     ];
+
+    // focusNode: _focusNode,
+    // autofocus: true,
+    // onKeyEvent: handleKeyEvent,
 
     return Focus(
       autofocus: true,
@@ -185,10 +253,11 @@ class _ConsultaPrecosState extends State<ConsultaPrecosPage> {
       v = await response.getMap('variacao');
       ProdutoVariacao variacao = ProdutoVariacao.fromMap(v.first);
 
-      gDevice.beep();
-
+      saldoProduto = await response.getResult('saldo', 'data');
       nomeProduto = produto.nome;
       precoProduto = variacao.preco.toStringAsFixed(2);
+
+      gDevice.beep();
 
       Timer(3000.ms, () {
         if (mounted) {
