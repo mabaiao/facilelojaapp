@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:facilelojaapp/main.dart';
 import 'package:facilelojaapp/util.dart';
